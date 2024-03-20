@@ -1,6 +1,7 @@
 import argparse
+from copy import deepcopy
 import re
-from datasets import load_dataset
+from datasets import load_dataset, Dataset
 from tqdm import tqdm
 from utils import query_chat, load_model_and_tokenizer
 
@@ -55,17 +56,25 @@ def main():
     model, tok = load_model_and_tokenizer(args.model_name)
     datasets = load_dataset(args.dataset_name, args.dataset_config_name)
     test_examples = datasets[args.dataset_split]
+    count = 0
     n_correct = 0
     outs = []
     for one in tqdm(test_examples):
-        one['answer'] = extract_substrings(one['solution'])
+        if "mmlu" in args.dataset_name and '|' in one['question']:
+            continue
+        if "competition_math" in args.dataset_name:
+            one['answer'] = extract_substrings(one['solution'])
+        if 'problem' not in one:
+            one['problem'] = deepcopy(one['question'])
+            del one['question']
         in_text = gen_prompt(one, fewshot_examples)
         gpt_answer = query_chat([{'role': 'user', 'content': in_text}], model=model)
-        outs.append(gpt_answer)
+        one['output'] = gpt_answer
+        outs.append(one)
     
-    test_examples = test_examples.add_column(name='output', column=outs)
+    test_examples = Dataset.from_list(outs)
     dataset_name = args.dataset_name.split('/')[-1]
-    test_examples.to_json(f"out/{dataset_name}-questions-{args.model_name}.json")
+    test_examples.to_json(f"out/{dataset_name}-{args.dataset_split}-questions-{args.model_name}.json")
 
 if __name__ == '__main__':
     main()
