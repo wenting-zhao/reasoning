@@ -98,7 +98,7 @@ def main():
 
     model, tok = load_model_and_tokenizer(args.model_name)
     datasets = load_dataset(args.dataset_name, args.dataset_config_name)
-    test_examples = datasets[args.dataset_split]
+    test_examples = datasets[args.dataset_split].shuffle(seed=42).select(range(500))
     fewshot_examples = datasets['train'].shuffle(seed=42).select(range(4))
     n_correct = 0
     outs = []

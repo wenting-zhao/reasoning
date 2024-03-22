@@ -20,6 +20,7 @@ if sys.argv[1] == "gsm8k":
         prefix = one['question']
         for i in range(0, len(s)-1, 2):
             text = prefix.strip() + " " + " ".join(s[:i]) + " </s> " + s[i] 
+            text = text.replace("  ", " ")
             outs.append({"text": text})
             print(text)
         print("="*100)
@@ -32,18 +33,18 @@ else:
         text = one['output']
         curr = []
         while True:
-            q_idx = text.find('Sub-question')
-            a_idx = text.find('Answer')
+            q_idx = text.find('Sub-problem')
+            a_idx = text.find('Solution')
             q = text[q_idx:a_idx]
             text = text[a_idx:]
-            if 'Sub-question' not in text:
+            if 'Sub-problem' not in text:
                 a = text
                 break
             else:
-                q_idx = text.find('Sub-question')
+                q_idx = text.find('Sub-problem')
                 a = text[:q_idx]
             text = text[q_idx:]
-            curr.append([q.replace('Sub-question:', '').strip(), a.replace('Answer:', '').strip()])
+            curr.append([q.replace('Sub-problem:', '').strip(), a.replace('Solution to the sub-problem:', '').strip()])
         if len(curr) > 0:
             one['steps'] = curr
             new_ds.append(one)
@@ -56,6 +57,7 @@ else:
             text = text.strip()
             prefix = one['problem']
             text = prefix.strip() + ' ' + text.strip() + ' </s> ' + one['steps'][i][0].strip()
+            text = text.replace("  ", " ")
             outs.append({"text": text})
             print(text)
         print("="*100)
