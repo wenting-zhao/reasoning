@@ -178,7 +178,7 @@ def main():
             print("-" * 40 + "\n")
             print(one["solution"] + "\n")
             print("-" * 40 + "\n")
-            print(outs[-1][-1] + "\n")
+            print(outs[-1][-1], "\n")
 
     print(
         "n_correct:",
