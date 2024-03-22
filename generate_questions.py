@@ -30,11 +30,21 @@ def extract_substrings(text):
     return matches[0]
 
 def format_example(example, include_answer=True):
-    prompt = "Problem: " + example['problem'] + f"\nSolution: {example['answer']}\n\n"
     if include_answer:
+        prompt = "Problem: " + example['problem'] + f"\nSolution: {example['answer']}\n\n"
         for q, a in example['steps']:
             prompt += f"Sub-problem: {q}\nSolution to the sub-problem: {a}\n"
         prompt += "\n"
+        return prompt
+    if 'choices' in example:
+        prompt = "Problem: " + example['problem'] + " Which of the following answer choices is correct?"
+        choices = ["A", "B", "C", "D"]
+        assert len(example['choices']) == len(choices)
+        for j, item in enumerate(example['choices']):
+            prompt += "\n{}. {}".format(choices[j], item)
+        prompt += f"\nSolution: {choices[example['answer']]}. {example['choices'][example['answer']]}\n\n"
+    else:
+        prompt = "Problem: " + example['problem'] + f"\nSolution: {example['answer']}\n\n"
     return prompt
 
 def gen_prompt(test_example, fewshot_examples):
