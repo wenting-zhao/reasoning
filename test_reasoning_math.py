@@ -190,7 +190,8 @@ def main():
     )
     
     test_examples = test_examples.add_column(name='output', column=outs)
-    test_examples.to_json(f"out/small-reasoning-math-outputs-{args.model_name}-{args.reasoning_model_name.split('/')[-1]}.json")
+    dataset_name = args.dataset_name.split('/')[-1]
+    test_examples.to_json(f"out/small-reasoning-{dataset_name}-outputs-{args.model_name}-{args.reasoning_model_name.split('/')[-1]}.json")
 
 if __name__ == '__main__':
     main()

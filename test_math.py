@@ -151,7 +151,8 @@ def main():
     )
     
     test_examples = test_examples.add_column(name='output', column=outs)
-    test_examples.to_json(f"out/math-outputs-{args.model_name}.json")
+    dataset_name = args.dataset_name.split('/')[-1]
+    test_examples.to_json(f"out/small-{dataset_name}-outputs-{args.model_name}.json")
 
 if __name__ == '__main__':
     main()
