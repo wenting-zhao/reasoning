@@ -1,3 +1,4 @@
+import re
 import time
 import torch
 import os
@@ -52,3 +53,34 @@ def load_model_and_tokenizer(name):
         model = name
         tokenizer = ""
     return model, tokenizer
+
+def format_reasoning_input(example):
+    if len(example['steps']) > 0:
+        first = [' '.join(x) for x in example['steps']]
+        text = ' '.join(first)
+        text = text.strip()
+        prefix = example['problem']
+        text = prefix.strip() + ' ' + text.strip() + ' </s> '
+    else:
+        text = example['problem'].strip() + ' </s> '
+    return text
+
+def inference_step(example, model, tokenizer, max_tokens=64, temperature=1):
+    prompt_text = format_reasoning_input(example) + ' </s> '
+    d = tokenizer(prompt_text, return_tensors="pt")
+    for key in d:
+        d[key] = d[key].to(device)
+
+    outputs = model.generate(
+        **d,
+        max_new_tokens=max_tokens,
+        temperature=temperature,
+        do_sample=True
+    )
+
+    # Decode text
+    text = tokenizer.decode(outputs[0], clean_up_tokenization_spaces=True)
+    idx = text.find('</s>')
+    text = text[idx:].replace('</s>', '').strip()
+    text = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s', text)[0].strip()
+    return text

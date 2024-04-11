@@ -119,8 +119,8 @@ def main():
         curr_seq = []
         for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
             # Decode text
-            #text = tokenizer.decode(generated_sequence, clean_up_tokenization_spaces=True, skip_special_tokens=True)
             text = tokenizer.decode(generated_sequence, clean_up_tokenization_spaces=True).split(' </s> ')[1]
+            text = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s', text)[0].strip()
             print(text)
             curr_seq.append(text)
         generated_sequences.append(curr_seq)
