@@ -74,8 +74,9 @@ def inference_step(example, model, tokenizer, max_tokens=64, temperature=1):
     outputs = model.generate(
         **d,
         max_new_tokens=max_tokens,
-        temperature=temperature,
-        do_sample=True
+        num_beams=3
+        #temperature=temperature,
+        #do_sample=True
     )
 
     # Decode text

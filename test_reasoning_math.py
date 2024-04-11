@@ -112,39 +112,46 @@ def main():
 
     model, _ = load_model_and_tokenizer(args.model_name)
     reasoning_model, tok = load_model_and_tokenizer(args.reasoning_model_name)
-    datasets = load_dataset(args.dataset_name, args.dataset_config_name)
-    test_examples = datasets[args.dataset_split].shuffle(seed=42).select(range(500))
+    if args.dataset_name.endswith('json'):
+        test_examples = load_dataset('json', data_files=args.dataset_name, split="train")
+    else:
+        datasets = load_dataset(args.dataset_name, args.dataset_config_name)
+        test_examples = datasets[args.dataset_split].shuffle(seed=42).select(range(500))
     n_correct = 0
     outs = []
     for one in tqdm(test_examples):
-        one['steps'] = []
-        print(one['problem'])
-        num_retry = 0
-        while True and num_retry < args.max_retry:
-            num_retry += 1
-            while True: 
-                question = inference_step(one, reasoning_model, tok)
-                if question != '':
-                    break
-            one['steps'].append([question])
-            in_text = gen_prompt(one, fewshot_examples)
-            curr = query_chat([{'role': 'user', 'content': in_text}], model=model)
-            idx = curr.find("Sub-question")
-            if idx > 0:
-                curr = curr[:idx]
-            curr = curr.replace('Solution: ', '').strip()
-            one['steps'][-1].append(curr)
-            res = extract_substrings(curr)
-            print("---STEPS---", one['steps'][-1])
-            if res is not None:
-                gpt_answer = curr
-                print("FOUND SOLUTION:", res)
-                print("GOLD  SOLUTION:", one["solution"])
-                print("="*100)
-                break
+        if 'output' in one:
+            gpt_answer = ' '.join([' '.join(onex) for onex in one['output']])
+            outs.append(one['output'])
         else:
-            gpt_answer = curr
-        outs.append(one['steps'])
+            one['steps'] = []
+            print(one['problem'])
+            num_retry = 0
+            while True and num_retry < args.max_retry:
+                num_retry += 1
+                while True:
+                    question = inference_step(one, reasoning_model, tok)
+                    if question != '':
+                        break
+                one['steps'].append([question])
+                in_text = gen_prompt(one, fewshot_examples)
+                curr = query_chat([{'role': 'user', 'content': in_text}], model=model)
+                idx = curr.find("Sub-question")
+                if idx > 0:
+                    curr = curr[:idx]
+                curr = curr.replace('Solution: ', '').strip()
+                one['steps'][-1].append(curr)
+                res = extract_substrings(curr)
+                print("---STEPS---", one['steps'][-1])
+                if res is not None:
+                    gpt_answer = curr
+                    print("FOUND SOLUTION:", res)
+                    print("GOLD  SOLUTION:", one["solution"])
+                    print("="*100)
+                    break
+            else:
+                gpt_answer = curr
+            outs.append(one['steps'])
 
         official_answer = (
             extract_substrings(one["solution"])
@@ -188,10 +195,11 @@ def main():
         "accuracy:",
         n_correct / len(test_examples),
     )
-    
-    test_examples = test_examples.add_column(name='output', column=outs)
-    dataset_name = args.dataset_name.split('/')[-1]
-    test_examples.to_json(f"out/small-reasoning-{dataset_name}-outputs-{args.model_name}-{args.reasoning_model_name.split('/')[-1]}.json")
+
+    if 'output' not in test_examples.column_names:
+        test_examples = test_examples.add_column(name='output', column=outs)
+        dataset_name = args.dataset_name.split('/')[-1]
+        test_examples.to_json(f"out/small-reasoning-{dataset_name}-outputs-{args.model_name}-{args.reasoning_model_name.split('/')[-1]}.json")
 
 if __name__ == '__main__':
     main()

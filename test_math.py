@@ -97,14 +97,20 @@ def main():
     args = parser.parse_args()
 
     model, tok = load_model_and_tokenizer(args.model_name)
-    datasets = load_dataset(args.dataset_name, args.dataset_config_name)
-    test_examples = datasets[args.dataset_split].shuffle(seed=42).select(range(500))
-    fewshot_examples = datasets['train'].shuffle(seed=42).select(range(4))
+    if args.dataset_name.endswith('json'):
+        test_examples = load_dataset('json', data_files=args.dataset_name, split="train")
+    else:
+        datasets = load_dataset(args.dataset_name, args.dataset_config_name)
+        test_examples = datasets[args.dataset_split].shuffle(seed=42).select(range(500))
+        fewshot_examples = datasets['train'].shuffle(seed=42).select(range(4))
     n_correct = 0
     outs = []
     for one in tqdm(test_examples):
-        in_text = gen_prompt(one, fewshot_examples)
-        gpt_answer = query_chat([{'role': 'user', 'content': in_text}], model=model)
+        if 'output' in one:
+            gpt_answer = one['output']
+        else:
+            in_text = gen_prompt(one, fewshot_examples)
+            gpt_answer = query_chat([{'role': 'user', 'content': in_text}], model=model)
         outs.append(gpt_answer)
 
         official_answer = (
@@ -150,9 +156,11 @@ def main():
         n_correct / len(test_examples),
     )
     
-    test_examples = test_examples.add_column(name='output', column=outs)
-    dataset_name = args.dataset_name.split('/')[-1]
-    test_examples.to_json(f"out/small-{dataset_name}-outputs-{args.model_name}.json")
+    if 'output' not in test_examples.column_names:
+        test_examples = test_examples.add_column(name='output', column=outs)
+        dataset_name = args.dataset_name.split('/')[-1]
+        #test_examples.to_json(f"out/small-{dataset_name}-outputs-{args.model_name}.json")
+        test_examples.to_json(f"out/small-{dataset_name}-outputs-{args.model_name}-beam.json")
 
 if __name__ == '__main__':
     main()
