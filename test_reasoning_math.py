@@ -94,7 +94,7 @@ def format_example(example, include_answer=True):
     return prompt
 
 def gen_prompt(test_example, fewshot_examples):
-    prompt = "Solve the following math problems by decomposing them into subproblems.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n"
+    prompt = "Solve the following math problems by decomposing them into sub-problems.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n"
     for one in fewshot_examples:
         prompt += format_example(one)
     prompt += format_example(test_example, include_answer=False)
@@ -113,7 +113,7 @@ def main():
     model, _ = load_model_and_tokenizer(args.model_name)
     reasoning_model, tok = load_model_and_tokenizer(args.reasoning_model_name)
     datasets = load_dataset(args.dataset_name, args.dataset_config_name)
-    test_examples = datasets[args.dataset_split].select(range(500))
+    test_examples = datasets[args.dataset_split].shuffle(seed=42).select(range(500))
     n_correct = 0
     outs = []
     for one in tqdm(test_examples):
@@ -178,7 +178,7 @@ def main():
             print("-" * 40 + "\n")
             print(one["solution"] + "\n")
             print("-" * 40 + "\n")
-            print(outs[-1] + "\n")
+            print(outs[-1][-1] + "\n")
 
     print(
         "n_correct:",
