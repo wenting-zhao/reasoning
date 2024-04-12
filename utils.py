@@ -43,10 +43,42 @@ def query_chat(messages, model, tokenizer=None, temperature=1, max_tokens=512):
         output = tokenizer.decode(outputs[0][len(tokenized_chat[0]):], clean_up_tokenization_spaces=True, skip_special_tokens=True).strip()
     return output
 
+def sample_completion(text, model, tokenizer=None, temperature=1, max_tokens=512, samples=50):
+    d = tokenizer(text, return_tensors="pt")
+    for key in d:
+        d[key] = d[key].to(device)
+    with torch.no_grad():
+        out = model.generate(
+            **d,
+            max_new_tokens=max_tokens,
+            temperature=temperature,
+            do_sample=True,
+            num_return_sequences=samples,
+        )
+    # Remove the batch dimension when returning multiple sequences
+    if len(out.shape) > 2:
+        out.squeeze_()
+    output_sequences = out.cpu().tolist()
+
+    curr_seq = []
+    dupes = set()
+    for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
+        text = tokenizer.decode(generated_sequence, clean_up_tokenization_spaces=True, skip_special_tokens=True)
+        total_sequence = text[len(tokenizer.decode(d['input_ids'][0], clean_up_tokenization_spaces=True, skip_special_tokens=True)) :]
+        if total_sequence in dupes:
+            continue
+        dupes.add(total_sequence)
+        curr_seq.append(total_sequence)
+        print(total_sequence)
+        print("="*100)
+        curr_seq.append(total_sequence)
+    return curr_seq
+
 def load_model_and_tokenizer(name):
     if "gpt" not in name:
-        model = AutoModelForCausalLM.from_pretrained(name, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True)
+        model = AutoModelForCausalLM.from_pretrained(name, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, attn_implementation="flash_attention_2")
         model = model.to(device)
+        model = torch.compile(model)
         tokenizer = AutoTokenizer.from_pretrained(name)
         tokenizer.pad_token = tokenizer.eos_token
     else:
@@ -74,9 +106,8 @@ def inference_step(example, model, tokenizer, max_tokens=64, temperature=1):
     outputs = model.generate(
         **d,
         max_new_tokens=max_tokens,
-        num_beams=3
-        #temperature=temperature,
-        #do_sample=True
+        temperature=temperature,
+        do_sample=True
     )
 
     # Decode text
