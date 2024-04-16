@@ -43,8 +43,9 @@ def query_chat(messages, model, tokenizer=None, temperature=1, max_tokens=512):
         output = tokenizer.decode(outputs[0][len(tokenized_chat[0]):], clean_up_tokenization_spaces=True, skip_special_tokens=True).strip()
     return output
 
-def sample_completion(text, model, tokenizer=None, temperature=1, max_tokens=512, samples=50):
-    d = tokenizer(text, return_tensors="pt")
+def sample_completion(text, model, tokenizer, temperature=1, max_tokens=512, samples=50):
+    tokenizer.padding_side = "left"
+    d = tokenizer(text, return_tensors="pt", padding="longest")
     for key in d:
         d[key] = d[key].to(device)
     with torch.no_grad():
@@ -64,11 +65,13 @@ def sample_completion(text, model, tokenizer=None, temperature=1, max_tokens=512
     dupes = set()
     for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
         text = tokenizer.decode(generated_sequence, clean_up_tokenization_spaces=True, skip_special_tokens=True)
-        total_sequence = text[len(tokenizer.decode(d['input_ids'][0], clean_up_tokenization_spaces=True, skip_special_tokens=True)) :]
-        if total_sequence in dupes:
-            continue
-        dupes.add(total_sequence)
-        curr_seq.append(total_sequence)
+        if samples == 1 and len(d['input_ids']) > 1:
+            total_sequence = text[len(tokenizer.decode(d['input_ids'][generated_sequence_idx], clean_up_tokenization_spaces=True, skip_special_tokens=True)) :]
+        elif samples > 1 and len(d['input_ids']) == 1:
+            total_sequence = text[len(tokenizer.decode(d['input_ids'][0], clean_up_tokenization_spaces=True, skip_special_tokens=True)) :]
+            if total_sequence in dupes:
+                continue
+            dupes.add(total_sequence)
         print(total_sequence)
         print("="*100)
         curr_seq.append(total_sequence)

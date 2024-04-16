@@ -5,6 +5,7 @@ name=$3
 python run_clm_no_trainer.py \
     --model_name_or_path $model \
     --train_file $data \
+    --validation_file data/fine-tuning/validation.json \
     --per_device_train_batch_size 1 \
     --num_train_epochs 1 \
     --gradient_accumulation_steps 8 \
