@@ -34,7 +34,8 @@ def format_example(example, include_answer=True, chain=False):
     if include_answer:
         prompt = "Problem: " + example['problem'] + " The sub-problems are\n"
         for q, a in example['steps']:
-            prompt += q+'\n'
+            prompt += "Sub-problem: "+q+'\n'
+        prompt += "START YOUR WORK BELOW:\n"
         for q, a in example['steps']:
             prompt += f"Sub-problem: {q}\nSolution to the sub-problem: {a}\n"
         prompt += "Answer: \\boxed{"+example['answer']+"}\n\n"
@@ -70,11 +71,13 @@ def format_example(example, include_answer=True, chain=False):
             if len(curr) > 0:
                 example['steps'].append(curr)
             else:
-                return None
-            prompt = "Problem: " + example['problem']
+                continue
+            prompt = "Problem: " + example['problem'] + '\n'
             for q, a in example['steps'][-1]:
-                prompt += q+'\n'
+                prompt += "Sub-problem: "+q+'\n'
+            prompt += "START YOUR WORK BELOW:\n"
             all_prompts.append(prompt)
+        del example['output']
     return all_prompts
 
 def gen_prompt(test_example, fewshot_examples):
@@ -119,10 +122,8 @@ def main():
             one['problem'] = deepcopy(one['question'])
             del one['question']
         in_text = gen_prompt(one, fewshot_examples)
-        if in_text is None:
-            continue
         gpt_answer = sample_completion(in_text, model, tok, samples=1)
-        one['output-b'] = gpt_answer
+        one['model-b'] = gpt_answer
         outs.append(one)
     
         new_ds = Dataset.from_list(outs)

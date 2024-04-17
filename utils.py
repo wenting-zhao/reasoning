@@ -67,13 +67,11 @@ def sample_completion(text, model, tokenizer, temperature=1, max_tokens=512, sam
         text = tokenizer.decode(generated_sequence, clean_up_tokenization_spaces=True, skip_special_tokens=True)
         if samples == 1 and len(d['input_ids']) > 1:
             total_sequence = text[len(tokenizer.decode(d['input_ids'][generated_sequence_idx], clean_up_tokenization_spaces=True, skip_special_tokens=True)) :]
-        elif samples > 1 and len(d['input_ids']) == 1:
+        elif samples >= 1 and len(d['input_ids']) == 1:
             total_sequence = text[len(tokenizer.decode(d['input_ids'][0], clean_up_tokenization_spaces=True, skip_special_tokens=True)) :]
             if total_sequence in dupes:
                 continue
             dupes.add(total_sequence)
-        print(total_sequence)
-        print("="*100)
         curr_seq.append(total_sequence)
     return curr_seq
 
