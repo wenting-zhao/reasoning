@@ -62,12 +62,13 @@ def format_example(example, include_answer=True, chain=False):
                 text = text[a_idx:]
                 if 'Sub-problem' not in text:
                     a = text
+                    curr.append([q.replace('Sub-problem:', '').strip(), a.replace('Solution to the sub-problem:', '').strip()])
                     break
                 else:
                     q_idx = text.find('Sub-problem')
                     a = text[:q_idx]
-                text = text[q_idx:]
-                curr.append([q.replace('Sub-problem:', '').strip(), a.replace('Solution to the sub-problem:', '').strip()])
+                    text = text[q_idx:]
+                    curr.append([q.replace('Sub-problem:', '').strip(), a.replace('Solution to the sub-problem:', '').strip()])
             if len(curr) > 0:
                 example['steps'].append(curr)
             else:
