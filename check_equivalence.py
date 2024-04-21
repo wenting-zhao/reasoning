@@ -260,14 +260,20 @@ def remove_boxed(s):
     except:
         return None
 
+def check(output, sol):
+    answer = remove_boxed(last_boxed_only_string(sol))
+    output = remove_boxed(last_boxed_only_string(output))
+    return is_equiv(output, answer)
+
 def main():
     ds = load_dataset("json", data_files=sys.argv[1], split="train")
+    solutions = list(load_dataset("hendrycks/competition_math", split="test")['solution'])
     correct = 0
-    for one in ds:
-        answer = remove_boxed(last_boxed_only_string(one["solution"]))
-        output = ' '.join([' '.join(one) for one in one["output"]])
-        output = remove_boxed(last_boxed_only_string(output))
-        equiv = is_equiv(output, answer)
+    for i, one in enumerate(ds):
+        #answer = remove_boxed(last_boxed_only_string(one["solution"]))
+        #output = ' '.join([' '.join(one) for one in one["output"]])
+        #output = remove_boxed(last_boxed_only_string(output))
+        equiv = check(one['output'], solutions[i])
         if equiv:
             correct += 1
     print("math accuracy:", correct / len(ds))
