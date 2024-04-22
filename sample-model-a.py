@@ -49,10 +49,13 @@ def format_example(example, include_answer=True):
     return prompt
 
 def gen_prompt(test_example, fewshot_examples):
-    prompt = "You will be given an extremely difficult problem with an answer specified. Your job is to show the derivation to the answer. Specifically, your derivation should be structured as a list of sub-problems and solutions to the sub-problems, which will eventually lead to the specified answer.\n\n"
-    for one in fewshot_examples:
-        prompt += format_example(one, include_answer=True)
-    prompt += format_example(test_example, include_answer=False)
+    if len(fewshot_examples) > 0:
+        prompt = "You will be given an extremely difficult problem with an answer specified. Your job is to show the derivation to the answer. Specifically, your derivation should be structured as a list of sub-problems and solutions to the sub-problems, which will eventually lead to the specified answer.\n\n"
+        for one in fewshot_examples:
+            prompt += format_example(one, include_answer=True)
+        prompt += format_example(test_example, include_answer=False)
+    else:
+        prompt = format_example(test_example, include_answer=False)
     return prompt
 
 def main():
@@ -64,6 +67,7 @@ def main():
     parser.add_argument("--num_samples", type=int, default=0, help="a random number")
     parser.add_argument("--start", type=int, default=0, help="start of the dataset")
     parser.add_argument("--end", type=int, default=1000, help="end of the dataset")
+    parser.add_argument("--nofewshot", action="store_true", help="later iterations require no fewshot.")
     args = parser.parse_args()
 
     model, tok = load_model_and_tokenizer(args.model_name)
@@ -88,7 +92,10 @@ def main():
         if 'problem' not in one:
             one['problem'] = deepcopy(one['question'])
             del one['question']
-        in_text = gen_prompt(one, fewshot_examples)
+        if args.nofewshot:
+            in_text = gen_prompt(one, [])
+        else:
+            in_text = gen_prompt(one, fewshot_examples)
         gpt_answer = sample_completion(in_text, model=model, tokenizer=tok, samples=args.num_samples)
         one['output'] = gpt_answer
         outs.append(one)

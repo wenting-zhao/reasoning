@@ -54,6 +54,7 @@ def format_example(example, include_answer=True, chain=False):
         for text in example['output']:
             # Mistral sometimes automatically generates next problem and we want to remove that
             text = text.split("Problem:")[0].strip()
+            text = text.split("Therefore, the answer is")[0].strip()
             curr = []
             while True:
                 q_idx = text.find('Sub-problem')
@@ -82,9 +83,12 @@ def format_example(example, include_answer=True, chain=False):
     return all_prompts
 
 def gen_prompt(test_example, fewshot_examples):
-    prompt = "You will be given an extremely difficult problem and its decomposed sub-problems. Your job is to derive an answer by finding solutions to the sub-problems. Please highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n"
-    for one in fewshot_examples:
-        prompt += format_example(one, include_answer=True)
+    if len(fewshot_examples) > 0:
+        prompt = "You will be given an extremely difficult problem and its decomposed sub-problems. Your job is to derive an answer by finding solutions to the sub-problems. Please highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n"
+        for one in fewshot_examples:
+            prompt += format_example(one, include_answer=True)
+    else:
+        prompt = ""
     out = format_example(test_example, include_answer=False)
     if out is None:
         return None
@@ -100,7 +104,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", type=str, required=True, help="The name of the model to use.")
     parser.add_argument("--dataset_name", type=str, required=True, help="The name of the dataset to use (via the datasets library).")
-    parser.add_argument("--num", type=int, default=0, help="a random number")
+    parser.add_argument("--nofewshot", action="store_true", help="later iterations require no fewshot.")
     args = parser.parse_args()
 
     model, tok = load_model_and_tokenizer(args.model_name)
@@ -122,7 +126,10 @@ def main():
         if 'problem' not in one:
             one['problem'] = deepcopy(one['question'])
             del one['question']
-        in_text = gen_prompt(one, fewshot_examples)
+        if args.nofewshot:
+            in_text = gen_prompt(one, [])
+        else:
+            in_text = gen_prompt(one, fewshot_examples)
         gpt_answer = sample_completion(in_text, model, tok, samples=1)
         one['model-b'] = gpt_answer
         outs.append(one)
