@@ -2,21 +2,10 @@ import pprint
 import sys
 from datasets import load_dataset
 
-def last_boxed_only(sample):
-    """
-    Given a (q,a) sample, filter the answers so that they only contain 
-    the last \boxed{...} or \fbox{...} element
-    """
-    q, a = sample
-    a = last_boxed_only_string(a)
-    if a == None:
-        return None
-    return (q, a)
-
-def last_boxed_only_string(string):
-    idx = string.rfind("\\boxed")
+def first_boxed_only_string(string):
+    idx = string.find("\\boxed")
     if idx < 0:
-        idx = string.rfind("\\fbox")
+        idx = string.find("\\fbox")
         if idx < 0:
             return None
 
@@ -261,8 +250,8 @@ def remove_boxed(s):
         return None
 
 def check(output, sol):
-    answer = remove_boxed(last_boxed_only_string(sol))
-    output = remove_boxed(last_boxed_only_string(output))
+    answer = remove_boxed(first_boxed_only_string(sol))
+    output = remove_boxed(first_boxed_only_string(output))
     return is_equiv(output, answer)
 
 def main():
@@ -270,9 +259,9 @@ def main():
     solutions = list(load_dataset("hendrycks/competition_math", split="test")['solution'])
     correct = 0
     for i, one in enumerate(ds):
-        #answer = remove_boxed(last_boxed_only_string(one["solution"]))
+        #answer = remove_boxed(first_boxed_only_string(one["solution"]))
         #output = ' '.join([' '.join(one) for one in one["output"]])
-        #output = remove_boxed(last_boxed_only_string(output))
+        #output = remove_boxed(first_boxed_only_string(output))
         equiv = check(one['output'], solutions[i])
         if equiv:
             correct += 1
