@@ -55,7 +55,7 @@ def main():
     sgl.set_default_backend(RuntimeEndpoint(f"http://localhost:{args.port}"))
 
     test_examples = datasets[args.dataset_split].select(range(args.start, args.end))
-    fewshot_examples = datasets['train'].shuffle(seed=5).select(range(4))
+    fewshot_examples = datasets['train'].select([1708, 7098, 1076, 600])
     n_correct = 0
     outs = []
     for i in tqdm(range(0, len(test_examples), args.batch_size)):

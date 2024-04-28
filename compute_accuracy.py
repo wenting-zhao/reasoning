@@ -1,11 +1,62 @@
 import pprint
 import sys
+import re
 from datasets import load_dataset
 
-def first_boxed_only_string(string):
-    idx = string.find("\\boxed")
+SUBSTITUTIONS = [
+    ('an ', ''), ('a ', ''), ('.$', '$'), ('\\$', ''), (r'\ ', ''),
+    (' ', ''), ('mbox', 'text'), (',\\text{and}', ','),
+    ('\\text{and}', ','), ('\\text{m}', '\\text{}')
+    ]
+REMOVED_EXPRESSIONS = [
+    'square', 'ways', 'integers', 'dollars', 'mph', 'inches', 'ft',
+    'hours', 'km', 'units', '\\ldots', 'sue', 'points', 'feet',
+    'minutes', 'digits', 'cents', 'degrees', 'cm', 'gm', 'pounds',
+    'meters', 'meals', 'edges', 'students', 'childrentickets', 'multiples',
+    '\\text{s}', '\\text{.}', '\\text{\ns}', '\\text{}^2',
+    '\\text{}^3', '\\text{\n}', '\\text{}', r'\mathrm{th}',
+    r'^\circ', r'^{\circ}', r'\;', r',\!', '{,}', '"', '\\dots'
+    ]
+
+def normalize_final_answer(final_answer: str) -> str:
+    """Normalize a final answer to a quantitative reasoning question."""
+    final_answer = final_answer.split('=')[-1]
+
+    for before, after in SUBSTITUTIONS:
+        final_answer = final_answer.replace(before, after)
+    for expr in REMOVED_EXPRESSIONS:
+        final_answer = final_answer.replace(expr, '')
+
+    # Extract answer that is in LaTeX math, is bold,
+    # is surrounded by a box, etc.
+    final_answer = re.sub(r'(.*?)(\$)(.*?)(\$)(.*)', '$\\3$', final_answer)
+    final_answer = re.sub(r'(\\text\{)(.*?)(\})', '\\2', final_answer)
+    final_answer = re.sub(r'(\\textbf\{)(.*?)(\})', '\\2', final_answer)
+    final_answer = re.sub(r'(\\overline\{)(.*?)(\})', '\\2', final_answer)
+    final_answer = re.sub(r'(\\boxed\{)(.*)(\})', '\\2', final_answer)
+
+    # Normalize shorthand TeX:
+    # \fracab -> \frac{a}{b}
+    # \frac{abc}{bef} -> \frac{abc}{bef}
+    # \fracabc -> \frac{a}{b}c
+    # \sqrta -> \sqrt{a}
+    # \sqrtab -> sqrt{a}b
+    final_answer = re.sub(
+    r'(frac)([^{])(.)', 'frac{\\2}{\\3}', final_answer)
+    final_answer = re.sub(
+    r'(sqrt)([^{])', 'sqrt{\\2}', final_answer)
+    final_answer = final_answer.replace('$', '')
+
+    # Normalize 100,000 -> 100000
+    if final_answer.replace(',', '').isdigit():
+        final_answer = final_answer.replace(',', '')
+
+    return final_answer
+
+def last_boxed_only_string(string):
+    idx = string.rfind("\\boxed")
     if idx < 0:
-        idx = string.find("\\fbox")
+        idx = string.rfind("\\fbox")
         if idx < 0:
             return None
 
@@ -28,64 +79,6 @@ def first_boxed_only_string(string):
         retval = string[idx:right_brace_idx + 1]
     
     return retval
-
-def only_until_first_boxed_from_tokens(string, tokens):
-    idx = string.find("\\boxed")
-    if idx < 0:
-        idx = string.find("\\fbox")
-        if idx < 0:
-            return None
-    
-    cum_length = 0
-    for i, t in enumerate(tokens):
-        cum_length += len(t)
-        if cum_length >= idx:
-            break
-    
-    return tokens[:i]
-
-
-
-def clean_numbers(sample):
-    if not sample:
-        return None
-    new_sample = list()
-    for s in sample:
-        new_sample.append(_clean_numbers(s))
-
-    return tuple(new_sample)
-
-def _clean_numbers(string):
-    """
-    Clean Numbers in the given string
-
-    >>> _clean_numbers(None, "Hello 123")
-    'Hello 123'
-    >>> _clean_numbers(None, "Hello 1234")
-    'Hello 1,234'
-    >>> _clean_numbers(None, "Hello 1234324asdasd")
-    'Hello 1,234,324asdasd'
-    """
-    num_prev_digits = 0
-    new_string = ""
-    for i, c in enumerate(string):
-        # isdigit() doesnt work here because of weird unicode chars.
-        if c in {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}:
-            num_prev_digits += 1
-        else:
-            if num_prev_digits > 3:
-                # Some fixing
-                string_number = new_string[-num_prev_digits:]
-                new_string = new_string[:-num_prev_digits] + "{0:,}".format(int(string_number))
-            num_prev_digits = 0
-        new_string += c
-
-    if num_prev_digits > 3:
-        # Some fixing
-        string_number = new_string[-num_prev_digits:]
-        new_string = new_string[:-num_prev_digits] + "{0:,}".format(int(string_number))
-
-    return new_string
 
 def _fix_fracs(string):
     substrs = string.split("\\frac")
@@ -250,8 +243,12 @@ def remove_boxed(s):
         return None
 
 def check(output, sol):
-    answer = remove_boxed(first_boxed_only_string(sol))
-    output = remove_boxed(first_boxed_only_string(output))
+    answer = remove_boxed(last_boxed_only_string(sol))
+    output = remove_boxed(last_boxed_only_string(output))
+    if answer is not None:
+        answer = normalize_final_answer(answer)
+    if output is not None:
+        output = normalize_final_answer(output)
     return is_equiv(output, answer)
 
 def main():
