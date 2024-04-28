@@ -13,14 +13,14 @@ from sglang.backend.runtime_endpoint import RuntimeEndpoint
 
 
 def format_example(example, include_answer=True):
-    prompt = "Problem: " + example['problem'] + "\nSolution:"
+    prompt = [{"role": "user", "content": "Solve the following math problems.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\nProblem: " + example['problem']}]
     if include_answer:
-        prompt += f" {example['solution']}\n\n"
+        prompt += [{"role": "assistant", "content": f"Solution: {example['solution']}"}]
     return prompt
 
 def gen_prompt(test_example, fewshot_examples):
     if len(fewshot_examples) > 0:
-        prompt = "Solve the following math problems.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n"
+        prompt = []
         for one in fewshot_examples:
             prompt += format_example(one)
         prompt += format_example(test_example, include_answer=False)
@@ -55,7 +55,7 @@ def main():
     sgl.set_default_backend(RuntimeEndpoint(f"http://localhost:{args.port}"))
 
     test_examples = datasets[args.dataset_split].select(range(args.start, args.end))
-    fewshot_examples = datasets['train'].shuffle(seed=42).select(range(4))
+    fewshot_examples = datasets['train'].shuffle(seed=5).select(range(4))
     n_correct = 0
     outs = []
     for i in tqdm(range(0, len(test_examples), args.batch_size)):
