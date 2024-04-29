@@ -2,6 +2,7 @@ import pprint
 import sys
 import re
 from datasets import load_dataset
+from statistics import mode
 
 SUBSTITUTIONS = [
     ('an ', ''), ('a ', ''), ('.$', '$'), ('\\$', ''), (r'\ ', ''),
@@ -256,7 +257,22 @@ def main():
     solutions = list(load_dataset("hendrycks/competition_math", split="test")['solution'])
     correct = 0
     for i, one in enumerate(ds):
-        equiv = check(one['output'], solutions[i])
+        if isinstance(one['output'], list):
+            majority = []
+            for x in one['output']:
+                x = remove_boxed(last_boxed_only_string(x))
+                if x is not None:
+                    x = normalize_final_answer(x)
+                majority.append(x)
+            output = mode(majority)
+        else:
+            output = remove_boxed(last_boxed_only_string(one['output']))
+        answer = remove_boxed(last_boxed_only_string(solutions[i]))
+        if answer is not None:
+            answer = normalize_final_answer(answer)
+        if output is not None:
+            output = normalize_final_answer(output)
+        equiv = is_equiv(output, answer)
         if equiv:
             correct += 1
     print("math accuracy:", correct / len(ds))
