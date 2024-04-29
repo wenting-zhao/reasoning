@@ -5,7 +5,7 @@ import sglang as sgl
 
 def start_server(model, port):
     process = subprocess.Popen(["python", "-m", "sglang.launch_server", "--model-path", model, "--port", port])
-    os.system("sleep 30s")
+    os.system("sleep 5m")
     return process
 
 @sgl.function
@@ -18,14 +18,14 @@ def text_qa(s, question):
     s += sgl.user(question[-1]["content"])
     s += sgl.assistant(sgl.gen("answer"))
 
-def sample_completion(text, temperature=1, max_tokens=512, samples=50):
+def sample_completion(text, temperature=1, max_tokens=1024, samples=50):
     if isinstance(text, str):
         d = [{"question": text} for _ in range(samples)]
-    elif isinstance(text, list) and len(text) == 1:
-        d = [{"question": text[0]} for _ in range(samples)]
     elif isinstance(text, list):
-        assert samples == 1
-        d = [{"question": one} for one in text]
+        d = [[{"question": one} for _ in range(samples)] for one in text]
+        d = [xx for x in d for xx in x]
+    else:
+        raise ValueError("input must be either str or list.")
     states = text_qa.run_batch(d, progress_bar=True, max_new_tokens=max_tokens, temperature=temperature)
     for i in range(len(states)):
         states[i] = states[i].text()
