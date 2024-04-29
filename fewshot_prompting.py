@@ -23,7 +23,7 @@ def gen_prompt(test_example, fewshot_examples):
     prompt = []
     if len(fewshot_examples) > 0:
         for one in fewshot_examples:
-            prompt += format_example(one)
+            prompt += format_example(one, include_answer=True)
     prompt += format_example(test_example, include_answer=False)
     return prompt
 
