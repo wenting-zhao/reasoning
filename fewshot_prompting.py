@@ -7,25 +7,24 @@ import numpy as np
 from datasets import load_dataset
 from tqdm import tqdm
 from utils import sample_completion, start_server
+from compute_accuracy import remove_boxed, last_boxed_only_string
 
 import sglang as sgl
 from sglang.backend.runtime_endpoint import RuntimeEndpoint
 
 
 def format_example(example, include_answer=True):
-    prompt = [{"role": "user", "content": "Solve the following math problems.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\nProblem: " + example['problem']}]
+    prompt = [{"role": "user", "content": "Solve the following math problem.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n" + example['problem']}]
     if include_answer:
-        prompt += [{"role": "assistant", "content": f"Solution: {example['solution']}"}]
+        prompt += [{"role": "assistant", "content": f"{example['solution']}"}]
     return prompt
 
 def gen_prompt(test_example, fewshot_examples):
+    prompt = []
     if len(fewshot_examples) > 0:
-        prompt = []
         for one in fewshot_examples:
             prompt += format_example(one)
-        prompt += format_example(test_example, include_answer=False)
-    else:
-        prompt = format_example(test_example, include_answer=False)
+    prompt += format_example(test_example, include_answer=False)
     return prompt
 
 def set_seed(args):
@@ -44,14 +43,16 @@ def main():
     parser.add_argument("--end", type=int, default=1000, help="end of the dataset")
     parser.add_argument("--port", type=str, default="30000", help="port number")
     parser.add_argument("--num_samples", type=int, default=1, help="how many samples to generate")
-    parser.add_argument("--nofewshot", action="store_true", help="later iterations require no fewshot.")
+    parser.add_argument("--nofewshot", action="store_true", help="later iterations require no fewshot")
+    parser.add_argument("--start_server", action="store_true", help="whether to start sglang server")
     args = parser.parse_args()
 
     set_seed(args)
 
     datasets = load_dataset(args.dataset_name, args.dataset_config_name)
 
-    pro = start_server(args.model_name, args.port)
+    if args.start_server:
+        pro = start_server(args.model_name, args.port)
     sgl.set_default_backend(RuntimeEndpoint(f"http://localhost:{args.port}"))
 
     test_examples = datasets[args.dataset_split].select(range(args.start, args.end))
@@ -67,16 +68,15 @@ def main():
             else:
                 in_text.append(gen_prompt(one, fewshot_examples))
         answer = sample_completion(in_text, samples=args.num_samples)
-        if args.dataset_split == "test":
-            outs += answer
-        else:
-            outs.append(answer)
+        outs += answer
 
+    outs = [outs[i:i+args.num_samples] for i in range(0, len(outs), args.num_samples)]
     test_examples = test_examples.add_column(name='output', column=outs)
     dataset_name = args.dataset_name.split('/')[-1]
     model_name = args.model_name.split('/')[-1]
     test_examples.to_json(f"out/{dataset_name}-{args.dataset_split}-fewshot-{model_name}-num{args.num_samples}-start{args.start}-end{args.end}.json")
-    os.killpg(os.getpgid(pro.pid), signal.SIGTERM)
+    if args.start_server:
+        os.killpg(os.getpgid(pro.pid), signal.SIGTERM)
 
 if __name__ == '__main__':
     main()
