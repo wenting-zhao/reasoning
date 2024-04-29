@@ -429,7 +429,9 @@ def main():
     text_column_name = "text" if "text" in column_names else column_names[0]
 
     def tokenize_function(examples):
-        return tokenizer(examples[text_column_name])
+        out = tokenizer.apply_chat_template(examples[text_column_name])
+        out = {"input_ids": out}
+        return out
 
     with accelerator.main_process_first():
         tokenized_datasets = raw_datasets.map(
@@ -623,6 +625,9 @@ def main():
         for step, batch in enumerate(eval_dataloader):
             with torch.no_grad():
                 batch["labels"] = batch["input_ids"].clone().detach()
+                print("model", model.device)
+                print("label", batch["labels"].device)
+                print("input_ids", batch["input_ids"].device)
                 #indices = (batch["input_ids"] == tokenizer.eos_token_id).cumsum(dim=1) == 0
                 #batch["labels"][indices] = -100
                 #batch["labels"][batch["input_ids"]==tokenizer.eos_token_id] = -100
