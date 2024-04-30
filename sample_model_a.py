@@ -67,11 +67,11 @@ def main():
         outs += answer
  
     outs = [outs[i:i+args.num_samples] for i in range(0, len(outs), args.num_samples)]
+    test_examples = test_examples.add_column(name='model-a', column=outs)
     dataset_name = args.dataset_name.split('/')[-1]
     model_name = args.model_name.split('/')[-1]
     out_name = f"out/model-a-samples-{dataset_name}-{args.dataset_split}-{model_name}-num{args.num_samples}-start{args.start}-end{args.end}.json"
-    new_ds = Dataset.from_list(outs)
-    new_ds.to_json(out_name)
+    test_examples.to_json(out_name)
     if args.start_server:
         os.killpg(os.getpgid(pro.pid), signal.SIGTERM)
 
