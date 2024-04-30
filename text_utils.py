@@ -20,3 +20,10 @@ def format_qa(text, eos_token="<|eot_id|>"):
             curr.append([q.replace('Sub-problem:', '').strip(), a.replace('Solution to the sub-problem:', '').strip()])
     return curr
 
+def format_cot(text, eos_token="<|eot_id|>"):
+    text = text.split("assistant")[-1]
+    start_idx = text.find("\n")
+    end_idx = text.rfind(eos_token)
+    text = text[start_idx:end_idx].strip()
+    return text
+
