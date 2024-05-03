@@ -621,41 +621,41 @@ def main():
                 break
 
         model.eval()
-        losses = []
-        for step, batch in enumerate(eval_dataloader):
-            with torch.no_grad():
-                batch["labels"] = batch["input_ids"].clone().detach()
-                print("model", model.device)
-                print("label", batch["labels"].device)
-                print("input_ids", batch["input_ids"].device)
-                #indices = (batch["input_ids"] == tokenizer.eos_token_id).cumsum(dim=1) == 0
-                #batch["labels"][indices] = -100
-                #batch["labels"][batch["input_ids"]==tokenizer.eos_token_id] = -100
-                outputs = model(**batch)
+        #losses = []
+        #for step, batch in enumerate(eval_dataloader):
+        #    with torch.no_grad():
+        #        batch["labels"] = batch["input_ids"].clone().detach()
+        #        print("model", model.device)
+        #        print("label", batch["labels"].device)
+        #        print("input_ids", batch["input_ids"].device)
+        #        #indices = (batch["input_ids"] == tokenizer.eos_token_id).cumsum(dim=1) == 0
+        #        #batch["labels"][indices] = -100
+        #        #batch["labels"][batch["input_ids"]==tokenizer.eos_token_id] = -100
+        #        outputs = model(**batch)
 
-            loss = outputs.loss
-            losses.append(accelerator.gather_for_metrics(loss.repeat(args.per_device_eval_batch_size)))
+        #    loss = outputs.loss
+        #    losses.append(accelerator.gather_for_metrics(loss.repeat(args.per_device_eval_batch_size)))
 
-        losses = torch.cat(losses)
-        try:
-            eval_loss = torch.mean(losses)
-            perplexity = math.exp(eval_loss)
-        except OverflowError:
-            perplexity = float("inf")
+        #losses = torch.cat(losses)
+        #try:
+        #    eval_loss = torch.mean(losses)
+        #    perplexity = math.exp(eval_loss)
+        #except OverflowError:
+        #    perplexity = float("inf")
 
-        logger.info(f"epoch {epoch}: perplexity: {perplexity} eval_loss: {eval_loss}")
+        #logger.info(f"epoch {epoch}: perplexity: {perplexity} eval_loss: {eval_loss}")
 
-        if args.with_tracking:
-            accelerator.log(
-                {
-                    "perplexity": perplexity,
-                    "eval_loss": eval_loss,
-                    "train_loss": total_loss.item() / len(train_dataloader),
-                    "epoch": epoch,
-                    "step": completed_steps,
-                },
-                step=completed_steps,
-            )
+        #if args.with_tracking:
+        #    accelerator.log(
+        #        {
+        #            "perplexity": perplexity,
+        #            "eval_loss": eval_loss,
+        #            "train_loss": total_loss.item() / len(train_dataloader),
+        #            "epoch": epoch,
+        #            "step": completed_steps,
+        #        },
+        #        step=completed_steps,
+        #    )
 
         if args.push_to_hub and epoch < args.num_train_epochs - 1:
             accelerator.wait_for_everyone()
@@ -698,8 +698,8 @@ def main():
                     repo_type="model",
                     token=args.hub_token,
                 )
-            with open(os.path.join(args.output_dir, "all_results.json"), "w") as f:
-                json.dump({"perplexity": perplexity}, f)
+            #with open(os.path.join(args.output_dir, "all_results.json"), "w") as f:
+            #    json.dump({"perplexity": perplexity}, f)
 
 
 if __name__ == "__main__":
