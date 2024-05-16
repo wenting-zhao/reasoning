@@ -28,21 +28,27 @@ for one in ds:
         curr = {"text": curr}
         outs.append(curr)
     elif option == "game":
-        for x in one['model-b']:
-            equiv = check(x, one['solution'])
-            if equiv:
-                curr = [{"role": "user", "content": "Solve the following math problem by decomposing it into a sequence of sub-problems and solving each at a time.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n" +  one['problem']}]
-                out = format_qa(x)
-                if len(out) < 1:
-                    print("WARNING:", x)
-                    print('-'*100)
-                res = ""
-                for q, a in out:
-                    res += f"Sub-problem: {q}\nSolution to the sub-problem: {a}\n" 
-                res += "Therefore, the answer is \\boxed{"+remove_boxed(last_boxed_only_string(one['solution']))+"}."
-                curr.append({"role": "assistant", "content": res})
-                curr = {"text": curr}
-                outs.append(curr)
+        if split == "train":
+            for x in one['model-b']:
+                equiv = check(x, one['solution'])
+                if equiv:
+                    curr = [{"role": "user", "content": "Solve the following math problem by decomposing it into a sequence of sub-problems and solving each at a time.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n" +  one['problem']}]
+                    out = format_qa(x)
+                    if len(out) < 1:
+                        print("WARNING:", x)
+                        print('-'*100)
+                    res = ""
+                    for q, a in out:
+                        res += f"Sub-problem: {q}\nSolution to the sub-problem: {a}\n"
+                    res += "Therefore, the answer is \\boxed{"+remove_boxed(last_boxed_only_string(one['solution']))+"}."
+                    curr.append({"role": "assistant", "content": res})
+                    curr = {"text": curr}
+                    outs.append(curr)
+        else:
+            curr = [{"role": "user", "content": "Solve the following math problem by decomposing it into a sequence of sub-problems and solving each at a time.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n" +  one['problem']}]
+            curr.append({"role": "assistant", "content": one['solution']})
+            curr = {"text": curr}
+            outs.append(curr)
 if name[0].endswith("json"):
     if "competition_math" in name[0]:
         out_name = f"data/math/competition_math-{split}-{option}.json"
