@@ -11,3 +11,4 @@ zmq
 rpyc
 vllm
 wandb
+hf_transfer
