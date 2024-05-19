@@ -1,6 +1,12 @@
-transformers
+transformers=4.40.0
 torch
 datasets
 evaluate
 openai
 accelerate
+uvloop
+sglang
+outlines
+zmq
+rpyc
+vllm
