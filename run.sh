@@ -2,8 +2,8 @@ model=$1
 data=$2
 name=$3
 lr=$4
-bs=$5
-gs=2
+gs=$5
+bs=4
 
 python run_clm_no_trainer.py \
     --model_name_or_path $model \
