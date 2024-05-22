@@ -44,6 +44,7 @@ for one in ds:
                     curr.append({"role": "assistant", "content": res})
                     curr = {"text": curr}
                     outs.append(curr)
+                    break
         else:
             curr = [{"role": "user", "content": "Solve the following math problem by decomposing it into a sequence of sub-problems and solving each at a time.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n" +  one['problem']}]
             curr.append({"role": "assistant", "content": one['solution']})

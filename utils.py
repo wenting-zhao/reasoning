@@ -5,7 +5,7 @@ import sglang as sgl
 
 def start_server(model, port):
     process = subprocess.Popen(["python", "-m", "sglang.launch_server", "--model-path", model, "--port", port])
-    os.system("sleep 5m")
+    os.system("sleep 2m")
     return process
 
 @sgl.function

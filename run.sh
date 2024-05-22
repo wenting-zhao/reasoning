@@ -3,7 +3,7 @@ data=$2
 name=$3
 lr=$4
 gs=$5
-bs=4
+bs=1
 
 python run_clm_no_trainer.py \
     --model_name_or_path $model \

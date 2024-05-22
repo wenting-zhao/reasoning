@@ -17,6 +17,7 @@ def main():
             if equiv:
                 count[-1] = 1
                 outs.append({"text": [{"role": "user", "content": "Solve the following math problem.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n" +  example['problem']}, {"role": "assistant", "content": format_cot(one)}]})
+                break
 
     print("correct chains per example:", len(outs)/len(test_examples))
     print("examples that were correct:", sum(count))

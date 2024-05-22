@@ -26,6 +26,7 @@ def main():
                 curr_b = {"problem": example["problem"], "steps": qa, "answer": remove_boxed(last_boxed_only_string(example["solution"]))}
                 model_b = format_example_b(curr_b, include_answer=True)
                 outs_model_b.append({"text": model_b})
+                break
     
     print("correct chains per example:", len(outs_model_b)/len(test_examples))
     print("examples that were correct:", sum(count))
