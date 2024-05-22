@@ -586,8 +586,11 @@ def main():
                 batch["labels"] = batch["input_ids"].clone().detach()
                 # turn everything to attention = 0 before and at first occurrence of tokenizer.eos_token_id
                 #indices = (batch["input_ids"] == tokenizer.eos_token_id).cumsum(dim=1) == 0
-                #batch["labels"][indices] = -100
-                #batch["labels"][batch["input_ids"]==tokenizer.eos_token_id] = -100
+                indices = (batch["input_ids"] == 271).cumsum(dim=1) == 0
+                batch["labels"][indices] = -100
+                indices = (batch["input_ids"] == 271).cumsum(dim=1) == 1
+                batch["labels"][indices] = -100
+                batch["labels"][batch["input_ids"]==tokenizer.eos_token_id] = -100
                 outputs = model(**batch)
                 loss = outputs.loss
                 # We keep track of the loss at each epoch
