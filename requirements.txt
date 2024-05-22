@@ -12,3 +12,4 @@ rpyc
 vllm
 wandb
 hf_transfer
+pillow
