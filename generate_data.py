@@ -8,6 +8,7 @@ from text_utils import format_qa
 name = sys.argv[1:-2]
 split = sys.argv[-2]
 option = sys.argv[-1]
+upper = 2
 if name[0].endswith("json"):
     ds = load_dataset('json', data_files=name, split="train")
 else:
@@ -29,6 +30,7 @@ for one in ds:
         outs.append(curr)
     elif option == "game":
         if split == "train":
+            count = 0
             for x in one['model-b']:
                 equiv = check(x, one['solution'])
                 if equiv:
@@ -44,7 +46,9 @@ for one in ds:
                     curr.append({"role": "assistant", "content": res})
                     curr = {"text": curr}
                     outs.append(curr)
-                    break
+                    count += 1
+                    if count >= upper:
+                        break
         else:
             curr = [{"role": "user", "content": "Solve the following math problem by decomposing it into a sequence of sub-problems and solving each at a time.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n" +  one['problem']}]
             curr.append({"role": "assistant", "content": one['solution']})
@@ -55,5 +59,7 @@ if name[0].endswith("json"):
         out_name = f"data/math/competition_math-{split}-{option}.json"
 else:
     out_name = f"data/math/{sys.argv[1].split('/')[-1]}-{split}-{option}.json"
+if option == "game":
+    out_name = out_name.replace('.json', f'_max{upper}.json')
 out_ds = Dataset.from_list(outs)
 out_ds.to_json(out_name)
