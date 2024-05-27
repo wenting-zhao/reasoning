@@ -4,6 +4,7 @@ import faulthandler
 import platform
 import types
 from enum import Enum
+from tqdm import tqdm
 
 # used for debugging to time steps
 from datetime import datetime
@@ -559,7 +560,6 @@ def reliability_guard(maximum_memory_bytes=None):
     subprocess.Popen = None  # type: ignore
 
     #__builtins__["help"] = None
-    #setattr(__builtins__, "help", None)
 
     import sys
 
@@ -573,12 +573,24 @@ def reliability_guard(maximum_memory_bytes=None):
 if __name__ == "__main__":
     import datasets
     import json
+    import numpy as np
 
+    #split = "train"
+    split = "test"
+    n_solutions = 5
     dataset = datasets.load_dataset(
-        "codeparrot/apps", split="train",
+        "codeparrot/apps", split=split,
     )
-    for example in dataset:
+    no_solutions = []
+    for i, example in tqdm(enumerate(dataset)):
         solutions = json.loads(example["solutions"])
         input_output = json.loads(example["input_output"])
-        result = run_test(example, solutions[0], debug=True)
-        print(result)
+        results = [
+            result
+            for solution in solutions[:n_solutions]
+            for result in run_test(example, solution, debug=False)
+        ]
+        if not any(results):
+            print("No solutions pass for problem", i)
+            no_solutions.append(i)
+    np.save(f"no_solutions-{split}", no_solutions)
