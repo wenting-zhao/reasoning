@@ -49,8 +49,13 @@ def parse_response(text):
     python_re = r'```(?:python)?(.*)```'
     plan_matches = re.findall(plan_re, text, re.DOTALL)
     python_matches = re.findall(python_re, text, re.DOTALL)
-    if len(python_matches) == 0 or len(plan_matches) == 0:
-        pdb.set_trace()
+
+    # generation failure => parsing failure
+    if len(plan_matches) == 0:
+        plan_matches = [""]
+    if len(python_matches) == 0:
+        python_matches = [""]
+
     return python_matches[0], plan_matches[0]
 
 
@@ -124,7 +129,6 @@ def main():
             ]
             for example, codes in zip(batch, batch_codes)
         ]
-        pdb.set_trace()
         # result can be
         # False if incorrect
         # -1 if timeout
