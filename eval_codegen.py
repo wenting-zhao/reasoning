@@ -3,7 +3,7 @@ import sys
 import faulthandler
 import platform
 import types
-from enum import Enum
+from enum import Enum, auto
 from tqdm import tqdm
 
 # used for debugging to time steps
@@ -25,6 +25,25 @@ g_backup = globals().copy()
 class CODE_TYPE(Enum):
     call_based = 0
     standard_input = 1
+
+
+class ErrorType(Enum):
+    Correct = auto()
+    Incorrect = auto()
+    Timeout = auto()
+    Compilation = auto()
+
+
+def get_error_type(result):
+    match result:
+        case True:
+            return ErrorType.Correct
+        case False:
+            return ErrorType.Incorrect
+        case -1:
+            return ErrorType.Timeout
+        case -2:
+            return ErrorType.Compilation
 
 
 class _RuntimeModule(object):
@@ -586,7 +605,7 @@ if __name__ == "__main__":
         solutions = json.loads(example["solutions"])
         input_output = json.loads(example["input_output"])
         results = [
-            result
+            result == True
             for solution in solutions[:n_solutions]
             for result in run_test(example, solution, debug=False)
         ]

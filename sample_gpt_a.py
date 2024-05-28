@@ -10,7 +10,7 @@ from tqdm import tqdm
 from utils import sample_completion, start_server
 from compute_accuracy import last_boxed_only_string, remove_boxed
 
-from eval_codegen import check_correctness
+from eval_codegen import run_test, ErrorType, get_error_type
 
 import pdb
 
@@ -109,16 +109,30 @@ def main():
     )
     test_examples = datasets.select(range(args.start, args.end))
 
-    outs = []
+    plan_outputs = []
+    code_outputs = []
+    is_correct = []
+    errors = []
     for example in tqdm(test_examples):
         answers = prompt(format_example(example), model=args.model_name, n=args.num_samples)
         codes, plans = zip(*map(parse_response, answers))
-        import pdb; pdb.set_trace()
-        result = check_correctness(example, codes)
-        outs.append(answers)
+        results = [
+            result
+            for code in codes
+            for result in run_test(example, code)
+        ]
+        # result can be
+        # False if incorrect
+        # -1 if timeout
+        # -2 if compilation error (whatever that means for python?)
+        plan_outputs.append(plans)
+        code_outputs.append(codes)
+        is_correct.append([r == True for r in results])
+        errors.append([get_error_type(r) for r in results])
 
-    test_examples = test_examples.add_column(name="model-a", column=outs)
-    pdb.set_trace()
+    test_examples = test_examples.add_column(name="plan", column=plan_outputs)
+    test_examples = test_examples.add_column(name="code", column=code_outputs)
+    test_examples = test_examples.add_column(name="is_correct", column=is_correct)
     dataset_name = args.dataset_name.split("/")[-1]
     model_name = args.model_name.split("/")[-1]
     out_name = f"out/model-a-samples-{dataset_name}-{args.dataset_split}-{model_name}-num{args.num_samples}-start{args.start}-end{args.end}.json"
