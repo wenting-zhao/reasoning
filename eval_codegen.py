@@ -565,7 +565,7 @@ def reliability_guard(maximum_memory_bytes=None):
     os.lchflags = None
     os.lchmod = None
     os.lchown = None
-    os.getcwd = None
+    #os.getcwd = None
     os.chdir = None
 
     import shutil
