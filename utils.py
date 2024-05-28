@@ -49,7 +49,10 @@ def convert_messages(batch):
     ]
 
 def sample_code_completion(batch, temperature=1, max_tokens=2048, samples=50):
-    states = codegen.run_batch(convert_messages(batch), progress_bar=True, max_new_tokens=max_tokens, temperature=temperature)
+    batch = convert_messages(batch)
+    # replicate
+    batch = [x for x in batch for _ in range(samples)]
+    states = codegen.run_batch(batch, progress_bar=True, max_new_tokens=max_tokens, temperature=temperature)
     batch_size = len(batch)
     return np.array([s["answer"] for s in states]).reshape(batch_size, samples)
 

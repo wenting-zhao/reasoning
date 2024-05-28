@@ -138,10 +138,10 @@ def main():
         is_correct.append(np.vectorize(lambda x: x == True)(results))
         errors.append(np.vectorize(get_error_type)(results))
 
-    plan_outputs = np.concatenate(plan_outputs, axis=0)
-    code_outputs = np.concatenate(code_outputs, axis=0)
-    is_correct  = np.concatenate(is_correct, axis=0)
-    errors = np.concatenate(errors, axis=0)
+    plan_outputs = np.concatenate(plan_outputs, axis=0).tolist()
+    code_outputs = np.concatenate(code_outputs, axis=0).tolist()
+    is_correct  = np.concatenate(is_correct, axis=0).tolist()
+    errors = np.concatenate(errors, axis=0).tolist()
 
     test_examples = test_examples.add_column(name="plan", column=plan_outputs)
     test_examples = test_examples.add_column(name="code", column=code_outputs)
