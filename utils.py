@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sglang as sgl
+import numpy as np
 
 
 def start_server(model, port):
@@ -30,4 +31,25 @@ def sample_completion(text, temperature=1, max_tokens=1024, samples=50):
     for i in range(len(states)):
         states[i] = states[i].text()
     return states
+
+
+@sgl.function
+def codegen(s, system_message, user_message):
+    s += sgl.system(system_message)
+    s += sgl.user(user_message)
+    s += sgl.assistant(sgl.gen("answer"))
+
+def convert_messages(batch):
+    return [
+        {
+            "system_message": example[0]["content"],
+            "user_message": example[1]["content"],
+        }
+        for example in batch
+    ]
+
+def sample_code_completion(batch, temperature=1, max_tokens=2048, samples=50):
+    states = codegen.run_batch(convert_messages(batch), progress_bar=True, max_new_tokens=max_tokens, temperature=temperature)
+    batch_size = len(batch)
+    return np.array([s["answer"] for s in states]).reshape(batch_size, samples)
 

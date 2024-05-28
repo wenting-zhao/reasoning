@@ -3,19 +3,18 @@ from copy import deepcopy
 import re
 import os
 import signal
-import diskcache as dc
-import openai
+import numpy as np
 from datasets import load_dataset, Dataset
 from tqdm import tqdm
-from utils import sample_completion, start_server
+from utils import sample_code_completion, start_server
 from compute_accuracy import last_boxed_only_string, remove_boxed
+
+import sglang as sgl
+from sglang.backend.runtime_endpoint import RuntimeEndpoint
 
 from eval_codegen import run_test, ErrorType, get_error_type
 
 import pdb
-
-cache = dc.Cache(os.getcwd() + "/.diskcache")
-client = openai.OpenAI()
 
 
 def format_example(example, include_answer=False):
@@ -26,13 +25,13 @@ def format_example(example, include_answer=False):
 You will be given a problem to solve.
 
 First, list out the steps and helper functions needed to solve the task in the following format:
-```plan
+# Plan
 1. function1: Type -> Type -> Type. Description.
 2. function2: Type -> Type -> Type. Description.
-```
 
-Then, give your solution in python:
+# Solution
 ```python
+# code solution here
 ```""",
         },
         {
@@ -44,30 +43,15 @@ Then, give your solution in python:
 
 
 def parse_response(text):
-    plan_re = r'```plan(.*)```'
-    python_re = r'```python(.*)```'
+    #plan_re = r'```plan(.*)```'
+    plan_re = r'# Plan\n(.*)# Solution'
+    #python_re = r'```python(.*)```'
+    python_re = r'```(?:python)?(.*)```'
     plan_matches = re.findall(plan_re, text, re.DOTALL)
     python_matches = re.findall(python_re, text, re.DOTALL)
     if len(python_matches) == 0 or len(plan_matches) == 0:
         pdb.set_trace()
     return python_matches[0], plan_matches[0]
-
-
-# @cached(cache, lambda *args, **kwargs: json.dumps(args) + json.dumps(kwargs))
-def prompt(
-    messages,
-    model="gpt-4o",
-    max_tokens=512,
-    temperature=1,
-    n=1,
-):
-    response = client.chat.completions.create(
-        messages=messages,
-        model=model,
-        temperature=temperature,
-        n=n,
-    )
-    return [x.message.content for x in response.choices]
 
 
 def main():
@@ -102,7 +86,21 @@ def main():
     parser.add_argument(
         "--nofewshot", action="store_true", help="later iterations require no fewshot."
     )
+    parser.add_argument("--use_sglang", action="store_true", help="use sglang")
+    parser.add_argument("--start_server", action="store_true", help="whether to start sglang server")
+    parser.add_argument("--port", type=str, default="30000", help="port number")
     args = parser.parse_args()
+
+    # override port
+    port = os.getenv("SGLANG_PORT") or args.port
+    print(f"Using SGLANG on port {port}")
+
+    if args.start_server:
+        pro = start_server(args.model_name, args.port)
+    if args.use_sglang:
+        sgl.set_default_backend(RuntimeEndpoint(f"http://localhost:{port}"))
+    else:
+        sgl.set_default_backend(sgl.OpenAI("gpt-4o"))
 
     datasets = load_dataset(
         args.dataset_name, args.dataset_config_name, split=args.dataset_split
@@ -113,22 +111,33 @@ def main():
     code_outputs = []
     is_correct = []
     errors = []
-    for example in tqdm(test_examples):
-        answers = prompt(format_example(example), model=args.model_name, n=args.num_samples)
-        codes, plans = zip(*map(parse_response, answers))
+    for i in tqdm(range(0, len(test_examples), args.batch_size)):
+        batch = test_examples.select(range(i, min(i+args.batch_size, len(test_examples))))
+        examples = [format_example(example) for example in batch]
+        answers = sample_code_completion(examples, samples=args.num_samples)
+        batch_codes, batch_plans = np.vectorize(parse_response)(answers)
         results = [
-            result
-            for code in codes
-            for result in run_test(example, code)
+            [
+                result
+                for code in codes
+                for result in run_test(example, code)
+            ]
+            for example, codes in zip(batch, batch_codes)
         ]
+        pdb.set_trace()
         # result can be
         # False if incorrect
         # -1 if timeout
         # -2 if compilation error (whatever that means for python?)
-        plan_outputs.append(plans)
-        code_outputs.append(codes)
-        is_correct.append([r == True for r in results])
-        errors.append([get_error_type(r) for r in results])
+        plan_outputs.append(batch_plans)
+        code_outputs.append(batch_codes)
+        is_correct.append(np.vectorize(lambda x: x == True)(results))
+        errors.append(np.vectorize(get_error_type)(results))
+
+    plan_outputs = np.concatenate(plan_outputs, axis=0)
+    code_outputs = np.concatenate(code_outputs, axis=0)
+    is_correct  = np.concatenate(is_correct, axis=0)
+    errors = np.concatenate(errors, axis=0)
 
     test_examples = test_examples.add_column(name="plan", column=plan_outputs)
     test_examples = test_examples.add_column(name="code", column=code_outputs)
