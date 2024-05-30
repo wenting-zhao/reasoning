@@ -27,7 +27,7 @@ st.write("# Visualize attempt number")
 attempt_idx = st.number_input("attempt number", min_value=0, max_value=len(example["plan"]))
 
 st.write("## Plan")
-st.code(example["plan"][attempt_idx])
+st.write(example["plan"][attempt_idx])
 
 st.write("## Code")
 st.code(example["code"][attempt_idx])
