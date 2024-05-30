@@ -17,11 +17,20 @@ from eval_codegen import run_test, ErrorType, get_error_type
 import pdb
 
 
-def format_example(example):
-    prompt = [
-        {
-            "role": "system",
-            "content": f"""You are an expert programmer.
+fewshot_idxs = [(21,1), (32,2)]
+
+def format_fewshot_example(example, attempt):
+    return """# Example Problem
+{example["question"]}
+
+# Plan
+{example["plan"][attempt]}
+
+# Solution
+{example["code"][attempt]}"""
+
+
+ZEROSHOT_STRING = """You are an expert programmer.
 You will be given a problem to solve.
 
 First, list out the steps and helper functions needed to solve the task in the following format:
@@ -32,12 +41,20 @@ First, list out the steps and helper functions needed to solve the task in the f
 # Solution
 ```python
 # code solution here
-```""",
+```"""
+
+def format_example(example, fewshot_examples=None):
+    prompt = [
+        {
+            "role": "system",
+            "content": ZEROSHOT_STRING
+                if not fewshot
+                else f"{ZEROSHOT_STRING}\n{'\n'.join(format_fewshot_example(*x) for x in fewshot_examples)}",
         },
         {
             "role": "user",
             "content": f"This is the problem:\n\n{example['question']}"
-        }
+        } 
     ]
     return prompt
 
@@ -113,13 +130,20 @@ def main():
     )
     test_examples = datasets.select(range(args.start, args.end))
 
+    fewshot_examples = None
+    if not args.nofewshot:
+        fewshot_examples = [
+            format_fewshot_example(datasets[idx], attempt)
+            for idx, attempt in fewshot_idxs
+        ]
+
     plan_outputs = []
     code_outputs = []
     is_correct = []
     errors = []
     for i in tqdm(range(0, len(test_examples), args.batch_size)):
         batch = test_examples.select(range(i, min(i+args.batch_size, len(test_examples))))
-        examples = [format_example(example) for example in batch]
+        examples = [format_example(example, fewshot_examples) for example in batch]
         answers = sample_code_completion(examples, samples=args.num_samples)
         batch_codes, batch_plans = np.vectorize(parse_response)(answers)
         results = [
