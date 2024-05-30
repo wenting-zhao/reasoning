@@ -17,7 +17,7 @@ from eval_codegen import run_test, ErrorType, get_error_type
 import pdb
 
 
-def format_example(example, include_answer=False):
+def format_example(example):
     prompt = [
         {
             "role": "system",
@@ -96,9 +96,10 @@ def main():
     parser.add_argument("--port", type=str, default="30000", help="port number")
     args = parser.parse_args()
 
-    # override port
-    port = os.getenv("SGLANG_PORT") or args.port
-    print(f"Using SGLANG on port {port}")
+    if args.use_sglang:
+        # override port
+        port = os.getenv("SGLANG_PORT") or args.port
+        print(f"Using SGLANG on port {port}")
 
     if args.start_server:
         pro = start_server(args.model_name, args.port)
@@ -130,9 +131,10 @@ def main():
             for example, codes in zip(batch, batch_codes)
         ]
         # result can be
-        # False if incorrect
-        # -1 if timeout
-        # -2 if compilation error (whatever that means for python?)
+        # # True if correct
+        # * False if incorrect
+        # * -1 if timeout
+        # * -2 if compilation error (whatever that means for python?)
         plan_outputs.append(batch_plans)
         code_outputs.append(batch_codes)
         is_correct.append(np.vectorize(lambda x: x == True)(results))
