@@ -17,8 +17,10 @@ example = dataset[idx]
 st.write("## Question")
 st.write(example["question"])
 
+st.write("## Attempts with correct answers")
 st.write(example["is_correct"])
 
+st.write("# Visualize attempt number")
 attempt_idx = st.number_input("attempt number", min_value=0, max_value=len(example["plan"]))
 
 st.write("## Plan")
