@@ -14,8 +14,11 @@ dataset = dataset[split]
 idx = st.number_input("Example number", min_value=0, max_value=len(dataset))
 example = dataset[idx]
 
+st.write("## Difficulty:", example["difficulty"])
+
 st.write("## Question")
 st.write(example["question"])
+
 
 st.write("## Attempts with correct answers")
 st.write(example["is_correct"])
