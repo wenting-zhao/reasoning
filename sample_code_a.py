@@ -20,7 +20,7 @@ import pdb
 fewshot_idxs = [(21,1), (32,2)]
 
 def format_fewshot_example(example, attempt):
-    return """# Example Problem
+    return f"""# Example Problem
 {example["question"]}
 
 # Plan
@@ -43,13 +43,15 @@ First, list out the steps and helper functions needed to solve the task in the f
 # code solution here
 ```"""
 
+NEWLINE = "\n"
+
 def format_example(example, fewshot_examples=None):
     prompt = [
         {
             "role": "system",
             "content": ZEROSHOT_STRING
-                if not fewshot
-                else f"{ZEROSHOT_STRING}\n{'\n'.join(format_fewshot_example(*x) for x in fewshot_examples)}",
+                if fewshot_examples is None
+                else f"{ZEROSHOT_STRING}\n{NEWLINE.join(fewshot_examples)}",
         },
         {
             "role": "user",
@@ -132,8 +134,12 @@ def main():
 
     fewshot_examples = None
     if not args.nofewshot:
+        annotated_dataset = load_dataset(
+            "json",
+            data_files="out/model-a-samples-apps-train-gpt-4o-num8-start0-end128.json",
+        )
         fewshot_examples = [
-            format_fewshot_example(datasets[idx], attempt)
+            format_fewshot_example(annotated_dataset["train"][idx], attempt)
             for idx, attempt in fewshot_idxs
         ]
 
