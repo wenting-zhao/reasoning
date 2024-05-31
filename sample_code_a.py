@@ -152,6 +152,7 @@ def main():
         examples = [format_example(example, fewshot_examples) for example in batch]
         answers = sample_code_completion(examples, samples=args.num_samples)
         batch_codes, batch_plans = np.vectorize(parse_response)(answers)
+        #pdb.set_trace()
         results = [
             [
                 result
@@ -180,7 +181,7 @@ def main():
     test_examples = test_examples.add_column(name="is_correct", column=is_correct)
     dataset_name = args.dataset_name.split("/")[-1]
     model_name = args.model_name.split("/")[-1]
-    out_name = f"out/model-a-samples-{dataset_name}-{args.dataset_split}-{model_name}-num{args.num_samples}-start{args.start}-end{args.end}.json"
+    out_name = f"out/model-a-samples-{dataset_name}-{args.dataset_split}-{model_name}-nofs{args.nofewshot}-num{args.num_samples}-start{args.start}-end{args.end}.json"
     test_examples.to_json(out_name)
 
 
