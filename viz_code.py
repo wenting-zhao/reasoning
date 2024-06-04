@@ -5,7 +5,7 @@ st.write("# Visualize code")
 
 dataset = datasets.load_dataset(
     "json",
-    data_files="out/model-a-samples-apps-train-gpt-4o-num8-start0-end128.json",
+    data_files="out/model-a-samples-apps-train-gpt-4o-nofsFalse-num8-start0-end128.json",
 )
 
 split = st.radio("split", options=dataset.keys())

@@ -16,8 +16,10 @@ from eval_codegen import run_test, ErrorType, get_error_type
 
 import pdb
 
-
-fewshot_idxs = [(21,1), (32,2)]
+# initial
+fewshot_idxs = [(21,1), (32,0)]
+# more examples with len(plans) > 2
+fewshot_idxs = [(3,0), (5,0), (8,3), (11,0), (21,1), (22,1), (32,0)]
 
 def format_fewshot_example(example, attempt):
     return f"""# Example Problem
