@@ -17,7 +17,7 @@ example = dataset[idx]
 st.write("## Difficulty:", example["difficulty"])
 
 st.write("## Question")
-st.write(example["question"])
+st.write(example["question"].replace("\n", "  \n"))
 
 
 st.write("## Attempts with correct answers")
