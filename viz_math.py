@@ -25,7 +25,7 @@ def split_text_and_keep_equations(text):
     return split_text_with_equations
 
 
-st.write("# Visualize code")
+st.write("# Visualize math")
 
 prior_dataset = datasets.load_dataset(
     "json",
