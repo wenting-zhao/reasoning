@@ -2,6 +2,7 @@ import datasets
 import streamlit as st
 import re
 
+st.set_page_config(layout="wide")
 
 def replacements(x):
     return (x
@@ -44,12 +45,26 @@ question = prior_example[0]["content"]
 st.write(replacements(question))
 #st.text(replacements(question))
 
-st.write("## Prior answer")
-prior_answer = prior_example[1]["content"]
 
-blocks = split_text_and_keep_equations(prior_answer)
-for block in blocks:
-    if "align*" in block:
-        st.latex(block)
-    else:
-        st.write(replacements(block))
+col1, col2 = st.columns(2)
+with col1:
+    st.write("## Prior answer")
+    prior_answer = prior_example[1]["content"]
+
+    blocks = split_text_and_keep_equations(prior_answer)
+    for block in blocks:
+        if "align*" in block:
+            st.latex(block)
+        else:
+            st.write(replacements(block))
+
+with col2:
+    st.write("## Posterior answer")
+    posterior_answer = posterior_example[1]["content"]
+
+    blocks = split_text_and_keep_equations(posterior_answer)
+    for block in blocks:
+        if "align*" in block:
+            st.latex(block)
+        else:
+            st.write(replacements(block))
