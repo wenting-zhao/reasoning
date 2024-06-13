@@ -36,18 +36,19 @@ posterior_dataset = datasets.load_dataset(
     data_files="data/math/star_posterior_iteration0v2_max1.json",
 )["train"]
 
-idx = st.number_input("Example number", min_value=0, max_value=len(prior_dataset))
-prior_example = prior_dataset[idx]["text"]
-posterior_example = posterior_dataset[idx]["text"]
 
-st.write("## Question")
-question = prior_example[0]["content"]
-st.write(replacements(question))
 #st.text(replacements(question))
 
 
 col1, col2 = st.columns(2)
 with col1:
+    idx1 = st.number_input("Prior example number", min_value=0, max_value=len(prior_dataset))
+    prior_example = prior_dataset[idx1]["text"]
+
+    st.write("## Question")
+    question = prior_example[0]["content"]
+    st.write(replacements(question))
+
     st.write("## Prior answer")
     prior_answer = prior_example[1]["content"]
 
@@ -59,6 +60,12 @@ with col1:
             st.write(replacements(block))
 
 with col2:
+    idx2 = st.number_input("Posterior example number", min_value=0, max_value=len(prior_dataset))
+    posterior_example = posterior_dataset[idx2]["text"]
+    st.write("## Question")
+    question = posterior_example[0]["content"]
+    st.write(replacements(question))
+
     st.write("## Posterior answer")
     posterior_answer = posterior_example[1]["content"]
 
