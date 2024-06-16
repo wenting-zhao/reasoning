@@ -6,3 +6,4 @@
     - Return the capacity of the last poured barrel.
 3. `main()`:
     - Call `parse_test_cases` and feed each test case to `max_possible_difference`, printing the result of each test case.
+4. Call main()
