@@ -1,5 +1,6 @@
 import datasets
 import streamlit as st
+import json
 
 st.write("# Visualize code")
 
@@ -18,7 +19,7 @@ st.write("## Difficulty:", example["difficulty"])
 
 st.write("## Question")
 st.write(example["question"].replace("\n", "  \n"))
-
+st.text(example["question"])
 
 st.write("## Attempts with correct answers")
 st.write(example["is_correct"])
@@ -28,6 +29,16 @@ attempt_idx = st.number_input("attempt number", min_value=0, max_value=len(examp
 
 st.write("## Plan")
 st.write(example["plan"][attempt_idx])
+st.text(example["plan"][attempt_idx])
 
 st.write("## Code")
 st.code(example["code"][attempt_idx])
+st.text(example["code"][attempt_idx])
+
+
+st.write("## IO")
+st.code(json.loads(example["input_output"]))
+
+st.write("## Solution")
+st.code(json.loads(example["solutions"])[0])
+
