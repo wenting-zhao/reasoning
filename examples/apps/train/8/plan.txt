@@ -1,0 +1,24 @@
+1. Handling Edge Cases
+First, the code checks for a simple edge case:
+- If the string contains no wins (`"W" not in string`), then the output score is calculated based on converting wins optimally. The maximum score you can get in this scenario is `min(n, k) * 2 - 1`.
+2. Parsing the Input
+The function reads the values of `n` (number of games) and `k` (maximum number of changes). It then reads the match outcomes as a string.
+3. Initialization and Counting Runs
+- **Initialization**:
+  - `L_s`: A list to store lengths of consecutive losses (`L` segments) between wins.
+  - `cnt`: Counter to track length of the current run of same results.
+  - `bef`: To track the previous character in the string.
+- The loop iterates over the characters in the string:
+  - It counts consecutive `W` or `L` characters.
+  - If the run ends, it updates the `L_s` list for runs of losses and calculates partial scores for winning streaks.
+4. Initial Calculation and Preparation
+- After populating initial counts:
+  - If the last run is of wins, it updates the score accordingly.
+  - If the string starts with losses and there are loss runs, it prepares to handle the starting losses separately.
+5. Sorting and Modifying Loss Runs
+- The list `L_s` is sorted to prioritize converting shorter loss streaks to wins. This is because changing shorter loss streaks first maximizes the number of wins with minimal changes.
+6. Calculating the Final Score
+- The function iterates over sorted loss segments and converts them to wins if within the budget `k`:
+  - Updates the score for fully changed loss segments.
+  - Stops if `k` runs out, partially changing the remaining losses to wins if necessary.
+- After processing internal loss segments, any remaining changes `k` are applied to the start and end of the string.
