@@ -65,7 +65,7 @@ def main():
         in_text = []
         for one in data:
             if args.fewshot:
-                in_text.append(gen_prompt(one, fewshot_examples, multi_turn=args.diverse))
+                in_text.append(gen_prompt(one, fewshot_examples))
             else:
                 in_text.append(gen_prompt(one, []))
         answer = sample_completion(in_text, samples=args.num_samples, multi_turn=args.diverse)
