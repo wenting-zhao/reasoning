@@ -1,5 +1,5 @@
-1. `parse_test_cases() -> List[Tuple[int, int, List[int]]]`:
-    - Parse the test cases from stdin. The first input will be the number of test cases. Each test case will have start with one line containing two integers, n and k, and a second line containing the barrel capacities. 
+1. `process_test_cases() -> List[Tuple[int, int, List[int]]]`:
+    - Process the test cases from stdin. The first input will be the number of test cases. Each test case will have start with one line containing two integers, n and k, and a second line containing the barrel capacities. 
 2. `max_possible_difference(n: int, k: int, barrels: List[int]) -> int`: 
     - Sort the barrels in descending order, the reverse python sort order.
     - Perform `k` operations by pouring water from the fullest barrel to second fullest barrel.

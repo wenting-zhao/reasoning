@@ -1,0 +1,26 @@
+We can solve this problem by framing it as removing all paths from a DAG that have length greater than or equal to 3.
+
+1. **Read Input:**
+   - Read the number of test cases, `T`.
+   - For each test case, read the number of landing spots (`n`) and the number of tracks (`m`).
+
+2. **Initialize Data Structures:**
+   - Create an adjacency list to store the outgoing connections for each spot.
+   - Create an in-degree count array to track the number of incoming connections to each spot.
+
+3. **Process Tracks:**
+   - For each track, read the start (`a`) and end (`b`) spots.
+   - Adjust the spots to zero-indexed values.
+   - Update the adjacency list and increment the in-degree for the destination spot `b`.
+
+4. **Topological Sorting:**
+   - Use Kahn's algorithm for topological sorting to assign levels to nodes/landing spots.
+   - Initialize a queue with all nodes that have zero in-degree and process each node by visiting its neighbors, updating their in-degrees, and enqueuing them if their in-degree becomes zero.
+
+5. **Determine Nodes to Remove:**
+   - Use the levels derived from the topological sort to identify any nodes that would result in paths of length 3 or more:
+     - If a node has a level difference of 3 or more with its descendants, mark it for removal.
+   - Ensure the total number of nodes removed does not exceed the allowed bound (e.g., at most \( \frac{4}{7}n \)).
+
+6. **Output Results:**
+   - For each test case, print the number of nodes to be removed and their indices.

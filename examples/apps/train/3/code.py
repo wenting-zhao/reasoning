@@ -1,4 +1,4 @@
-def parse_test_cases():
+def process_test_cases():
     num_cases = int(input())
     cases = []
     for n in range(num_cases):
@@ -14,7 +14,7 @@ def max_possible_difference(n, k, barrels):
 
 
 def main():
-    num_test_cases, test_cases = parse_test_cases()
+    num_test_cases, test_cases = process_test_cases()
     for test_case in test_cases:
         print(max_possible_difference(*test_case))
 
