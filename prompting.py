@@ -43,7 +43,8 @@ def main():
     parser.add_argument("--end", type=int, default=1000, help="end of the dataset")
     parser.add_argument("--port", type=str, default="30000", help="port number")
     parser.add_argument("--num_samples", type=int, default=1, help="how many samples to generate")
-    parser.add_argument("--nofewshot", action="store_true", help="later iterations require no fewshot")
+    parser.add_argument("--fewshot", action="store_true", help="enable fewshot")
+    parser.add_argument("--diverse", action="store_true", help="enable diverse sampling")
     parser.add_argument("--start_server", action="store_true", help="whether to start sglang server")
     args = parser.parse_args()
 
@@ -63,18 +64,24 @@ def main():
         data = test_examples.select(range(i, min(i+args.batch_size, len(test_examples))))
         in_text = []
         for one in data:
-            if args.nofewshot:
-                in_text.append(gen_prompt(one, []))
-            else:
+            if args.fewshot:
                 in_text.append(gen_prompt(one, fewshot_examples))
-        answer = sample_completion(in_text, samples=args.num_samples)
+            else:
+                in_text.append(gen_prompt(one, []))
+        answer = sample_completion(in_text, samples=args.num_samples, multi_turn=args.diverse)
         outs += answer
 
     outs = [outs[i:i+args.num_samples] for i in range(0, len(outs), args.num_samples)]
     test_examples = test_examples.add_column(name='output', column=outs)
     dataset_name = args.dataset_name.split('/')[-1]
     model_name = args.model_name.split('/')[-1]
-    test_examples.to_json(f"out/{dataset_name}-{args.dataset_split}-fewshot-{model_name}-num{args.num_samples}-start{args.start}-end{args.end}.json")
+    out_name = f"out/{dataset_name}-{args.dataset_split}-{model_name}-num{args.num_samples}"
+    if args.fewshot:
+        out_name += "-fewshot"
+    if args.diverse:
+        out_name += "-diverse"
+    out_name += f"-start{args.start}-end{args.end}.json"
+    test_examples.to_json(out_name)
     if args.start_server:
         os.killpg(os.getpgid(pro.pid), signal.SIGTERM)
 

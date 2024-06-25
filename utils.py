@@ -19,7 +19,25 @@ def text_qa(s, question):
     s += sgl.user(question[-1]["content"])
     s += sgl.assistant(sgl.gen("answer"))
 
-def sample_completion(text, temperature=1, max_tokens=1024, samples=50):
+@sgl.function
+def multi_turn_question(s, question):
+    for one in question[:-1]:
+        if one["role"] == "user":
+            s += sgl.user(one["content"])
+        else:
+            s += sgl.assistant(one["content"])
+    s += sgl.user(question[-1]["content"])
+    s += sgl.assistant(sgl.gen("answer_1"))
+    s += sgl.user("What's another way of solving this problem?")
+    s += sgl.assistant(sgl.gen("answer_2"))
+    s += sgl.user("Another different way of solving this problem?")
+    s += sgl.assistant(sgl.gen("answer_3"))
+    s += sgl.user("How about a more different way of solving this problem?")
+    s += sgl.assistant(sgl.gen("answer_4"))
+    s += sgl.user("What is a completely different way of solving the problem?")
+    s += sgl.assistant(sgl.gen("answer_5"))
+
+def sample_completion(text, temperature=1, max_tokens=1024, samples=50, multi_turn=False):
     if isinstance(text, str):
         d = [{"question": text} for _ in range(samples)]
     elif isinstance(text, list):
@@ -27,7 +45,10 @@ def sample_completion(text, temperature=1, max_tokens=1024, samples=50):
         d = [xx for x in d for xx in x]
     else:
         raise ValueError("input must be either str or list.")
-    states = text_qa.run_batch(d, progress_bar=True, max_new_tokens=max_tokens, temperature=temperature)
+    if multi_turn:
+        states = multi_turn_question.run_batch(d, progress_bar=True, max_new_tokens=max_tokens, temperature=temperature)
+    else:
+        states = text_qa.run_batch(d, progress_bar=True, max_new_tokens=max_tokens, temperature=temperature)
     for i in range(len(states)):
         states[i] = states[i].text()
     return states
