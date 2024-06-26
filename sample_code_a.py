@@ -225,6 +225,7 @@ def main():
 
     #test_examples = test_examples.add_column(name="plan", column=plan_outputs)
     test_examples = test_examples.add_column(name="is_correct", column=flat_is_correct)
+    out_name = f"out/model-a-samples-{dataset_name}-{args.dataset_split}-{model_name}-nofs{args.nofewshot}-num{args.num_samples}-start{args.start}-end{args.end}-eval.json"
     test_examples.to_json(out_name)
     print(f"Added eval results to {out_name}")
 
