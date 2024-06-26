@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reasoning"
+authors = [
+    {name = "blah", email = "blah@blah.com"},
+]
+requires-python = ">=3.10"
+dependencies = [
+    "transformers ; platform_system != 'Darwin'",
+    "torch ; platform_system != 'Darwin'",
+    "datasets",
+    "evaluate",
+    "openai",
+    "accelerate",
+    "uvloop",
+    "sglang",
+    "outlines",
+    "zmq",
+    "rpyc",
+    "vllm ; platform_system != 'Darwin'",
+    "wandb",
+    "hf_transfer",
+    "pillow",
+]
+version = "0.0.0"
+readme = "README.md"
+
+[tool.setuptools]
+packages = [
+    "reasoning",
+    #"reasoning.prompt",
+    #"reasoning.eval",
+]

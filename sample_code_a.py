@@ -13,98 +13,10 @@ from compute_accuracy import last_boxed_only_string, remove_boxed
 import sglang as sgl
 from sglang.backend.runtime_endpoint import RuntimeEndpoint
 
-from eval_codegen import run_test, ErrorType, get_error_type
+from reasoning.eval.eval_codegen import run_test, ErrorType, get_error_type
+from reasoning.prompt.codegen import AppsStdInPrompt, AppsCallPrompt
 
 import pdb
-
-# initial
-fewshot_idxs = [(21,1), (32,0)]
-# more examples with len(plans) > 2
-fewshot_idxs = [(3,0), (5,0), (8,3), (11,0), (21,1), (22,1), (32,0)]
-
-# old prompts with planning
-'''
-def format_fewshot_example(example, attempt):
-    return f"""# Example Problem
-{example["question"]}
-
-# Plan
-{example["plan"][attempt]}
-
-# Solution
-{example["code"][attempt]}"""
-
-
-ZEROSHOT_STRING = """You are an expert programmer.
-You will be given a problem to solve.
-
-First, list out the steps and helper functions needed to solve the task in the following format:
-# Plan
-1. function1: Type -> Type -> Type. Description.
-2. function2: Type -> Type -> Type. Description.
-
-# Solution
-```python
-# code solution here
-```"""
-'''
-
-# new prompts without planning
-def format_fewshot_example(example):
-    return f"""# Example Problem
-{example["question"].strip()}
-
-# Example Solution
-```python
-{json.loads(example["solutions"])[0].strip()}
-```"""
-
-
-ZEROSHOT_STRING = """You are an expert programmer.
-You will be given a problem to solve. Please write code for a solution.
-
-The problem will require you to read input from stdin, and print the solution to stdout.
-
-# Solution
-```python
-# code solution here
-```"""
-
-
-NEWLINE = "\n\n"
-
-def format_example(example, fewshot_examples=None):
-    prompt = [
-        {
-            "role": "system",
-            "content": ZEROSHOT_STRING
-                if fewshot_examples is None
-                else f"{ZEROSHOT_STRING}\n{NEWLINE.join(fewshot_examples)}",
-        },
-        {
-            "role": "user",
-            "content": f"This is the problem:\n\n# Problem\n{example['question']}\n# Solution"
-        } 
-    ]
-    return prompt
-
-
-def parse_response(text):
-    #plan_re = r'```plan(.*)```'
-    #plan_re = r'# Plan\n(.*)# Solution'
-    #python_re = r'```python(.*)```'
-    python_re = r'```(?:python)?(.*)```'
-    #plan_matches = re.findall(plan_re, text, re.DOTALL)
-    python_matches = re.findall(python_re, text, re.DOTALL)
-
-    # generation failure => parsing failure
-    #if len(plan_matches) == 0:
-        #plan_matches = [""]
-    if len(python_matches) == 0:
-        python_matches = [""]
-
-    #return python_matches[0], plan_matches[0]
-    return python_matches[0], None
 
 
 def main():
@@ -161,30 +73,22 @@ def main():
     )
     test_examples = datasets.select(range(args.start, args.end))
 
-    fewshot_examples = None
-    if not args.nofewshot:
-        '''
-        annotated_dataset = load_dataset(
-            "json",
-            data_files="out/model-a-samples-apps-train-gpt-4o-num8-start0-end128.json",
-        )
-        fewshot_examples = [
-            format_fewshot_example(annotated_dataset["train"][idx], attempt)
-            for idx, attempt in fewshot_idxs
-        ]
-        '''
-        train = load_dataset(args.dataset_name, split="train")
-        fewshot_examples = [
-            format_fewshot_example(x) for x in train.select(range(4))
-        ]
+    stdin_prompter = AppsStdInPrompt(use_fewshot=not args.nofewshot, k=4)
+    call_prompter = AppsCallPrompt(use_fewshot=not args.nofewshot, k=4)
 
+    def format_example(example):
+        return (
+            stdin_prompter.render(example)
+            if example["starter_code"] == ""
+            else call_prompter.render(example)
+        )
 
     print("RUNNING GENERATION")
     plan_outputs = []
     code_outputs = []
     for i in tqdm(range(0, len(test_examples), args.batch_size)):
         batch = test_examples.select(range(i, min(i+args.batch_size, len(test_examples))))
-        examples = [format_example(example, fewshot_examples) for example in batch]
+        examples = [format_example(example) for example in batch]
         answers = sample_code_completion(examples, samples=args.num_samples)
         batch_codes, batch_plans = np.vectorize(parse_response)(answers)
         code_outputs.append(batch_codes)
@@ -225,6 +129,7 @@ def main():
 
     #test_examples = test_examples.add_column(name="plan", column=plan_outputs)
     test_examples = test_examples.add_column(name="is_correct", column=flat_is_correct)
+    out_name = f"out/model-a-samples-{dataset_name}-{args.dataset_split}-{model_name}-nofs{args.nofewshot}-num{args.num_samples}-start{args.start}-end{args.end}-eval.json"
     test_examples.to_json(out_name)
     print(f"Added eval results to {out_name}")
 

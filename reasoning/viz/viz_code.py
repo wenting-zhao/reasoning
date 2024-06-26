@@ -15,6 +15,8 @@ dataset = dataset[split]
 idx = st.number_input("Example number", min_value=0, max_value=len(dataset))
 example = dataset[idx]
 
+import pdb; pdb.set_trace()
+
 st.write("## Difficulty:", example["difficulty"])
 
 st.write("## Question")
