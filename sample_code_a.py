@@ -179,15 +179,30 @@ def main():
         ]
 
 
+    print("RUNNING GENERATION")
     plan_outputs = []
     code_outputs = []
-    is_correct = []
-    errors = []
     for i in tqdm(range(0, len(test_examples), args.batch_size)):
         batch = test_examples.select(range(i, min(i+args.batch_size, len(test_examples))))
         examples = [format_example(example, fewshot_examples) for example in batch]
         answers = sample_code_completion(examples, samples=args.num_samples)
         batch_codes, batch_plans = np.vectorize(parse_response)(answers)
+        code_outputs.append(batch_codes)
+
+    #flat_plan_outputs = np.concatenate(plan_outputs, axis=0).tolist()
+    flat_code_outputs = np.concatenate(code_outputs, axis=0).tolist()
+
+    test_examples = test_examples.add_column(name="code", column=flat_code_outputs)
+    dataset_name = args.dataset_name.split("/")[-1]
+    model_name = args.model_name.split("/")[-1]
+    out_name = f"out/model-a-samples-{dataset_name}-{args.dataset_split}-{model_name}-nofs{args.nofewshot}-num{args.num_samples}-start{args.start}-end{args.end}.json"
+    test_examples.to_json(out_name)
+    print(f"Saved generations to {out_name}")
+
+    print("RUNNING EVALUATION")
+    is_correct = []
+    errors = []
+    for batch_codes in code_outputs:
         results = [
             [
                 result
@@ -202,22 +217,16 @@ def main():
         # * -1 if timeout
         # * -2 if compilation error (whatever that means for python?)
         #plan_outputs.append(batch_plans)
-        code_outputs.append(batch_codes)
         is_correct.append(np.vectorize(lambda x: x == True)(results))
         errors.append(np.vectorize(get_error_type)(results))
 
-    #plan_outputs = np.concatenate(plan_outputs, axis=0).tolist()
-    code_outputs = np.concatenate(code_outputs, axis=0).tolist()
-    is_correct  = np.concatenate(is_correct, axis=0).tolist()
-    errors = np.concatenate(errors, axis=0).tolist()
+    flat_is_correct  = np.concatenate(is_correct, axis=0).tolist()
+    flat_errors = np.concatenate(errors, axis=0).tolist()
 
     #test_examples = test_examples.add_column(name="plan", column=plan_outputs)
-    test_examples = test_examples.add_column(name="code", column=code_outputs)
-    test_examples = test_examples.add_column(name="is_correct", column=is_correct)
-    dataset_name = args.dataset_name.split("/")[-1]
-    model_name = args.model_name.split("/")[-1]
-    out_name = f"out/model-a-samples-{dataset_name}-{args.dataset_split}-{model_name}-nofs{args.nofewshot}-num{args.num_samples}-start{args.start}-end{args.end}.json"
+    test_examples = test_examples.add_column(name="is_correct", column=flat_is_correct)
     test_examples.to_json(out_name)
+    print(f"Added eval results to {out_name}")
 
 
 if __name__ == "__main__":
