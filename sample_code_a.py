@@ -52,11 +52,11 @@ First, list out the steps and helper functions needed to solve the task in the f
 # new prompts without planning
 def format_fewshot_example(example):
     return f"""# Example Problem
-{example["question"]}
+{example["question"].strip()}
 
 # Example Solution
 ```python
-{json.loads(example["solutions"])[0]}
+{json.loads(example["solutions"])[0].strip()}
 ```"""
 
 
@@ -71,7 +71,7 @@ The problem will require you to read input from stdin, and print the solution to
 ```"""
 
 
-NEWLINE = "\n"
+NEWLINE = "\n\n"
 
 def format_example(example, fewshot_examples=None):
     prompt = [
