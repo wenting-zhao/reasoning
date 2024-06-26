@@ -3,6 +3,7 @@ from copy import deepcopy
 import re
 import os
 import signal
+import json
 import numpy as np
 from datasets import load_dataset, Dataset
 from tqdm import tqdm
@@ -21,6 +22,8 @@ fewshot_idxs = [(21,1), (32,0)]
 # more examples with len(plans) > 2
 fewshot_idxs = [(3,0), (5,0), (8,3), (11,0), (21,1), (22,1), (32,0)]
 
+# old prompts with planning
+'''
 def format_fewshot_example(example, attempt):
     return f"""# Example Problem
 {example["question"]}
@@ -44,6 +47,29 @@ First, list out the steps and helper functions needed to solve the task in the f
 ```python
 # code solution here
 ```"""
+'''
+
+# new prompts without planning
+def format_fewshot_example(example):
+    return f"""# Example Problem
+{example["question"]}
+
+# Example Solution
+```python
+{json.loads(example["solutions"])[0]}
+```"""
+
+
+ZEROSHOT_STRING = """You are an expert programmer.
+You will be given a problem to solve. Please write code for a solution.
+
+The problem will require you to read input from stdin, and print the solution to stdout.
+
+# Solution
+```python
+# code solution here
+```"""
+
 
 NEWLINE = "\n"
 
@@ -57,7 +83,7 @@ def format_example(example, fewshot_examples=None):
         },
         {
             "role": "user",
-            "content": f"This is the problem:\n\n{example['question']}"
+            "content": f"This is the problem:\n\n# Problem\n{example['question']}\n# Solution\n```python"
         } 
     ]
     return prompt
@@ -136,6 +162,7 @@ def main():
 
     fewshot_examples = None
     if not args.nofewshot:
+        '''
         annotated_dataset = load_dataset(
             "json",
             data_files="out/model-a-samples-apps-train-gpt-4o-num8-start0-end128.json",
@@ -144,6 +171,12 @@ def main():
             format_fewshot_example(annotated_dataset["train"][idx], attempt)
             for idx, attempt in fewshot_idxs
         ]
+        '''
+        train = load_dataset(args.dataset_name, split="train")
+        fewshot_examples = [
+            format_fewshot_example(x) for x in train.select(range(4))
+        ]
+
 
     plan_outputs = []
     code_outputs = []
@@ -152,9 +185,9 @@ def main():
     for i in tqdm(range(0, len(test_examples), args.batch_size)):
         batch = test_examples.select(range(i, min(i+args.batch_size, len(test_examples))))
         examples = [format_example(example, fewshot_examples) for example in batch]
+        import pdb; pdb.set_trace()
         answers = sample_code_completion(examples, samples=args.num_samples)
         batch_codes, batch_plans = np.vectorize(parse_response)(answers)
-        #pdb.set_trace()
         results = [
             [
                 result
