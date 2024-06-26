@@ -83,7 +83,7 @@ def format_example(example, fewshot_examples=None):
         },
         {
             "role": "user",
-            "content": f"This is the problem:\n\n# Problem\n{example['question']}\n# Solution\n```python"
+            "content": f"This is the problem:\n\n# Problem\n{example['question']}\n# Solution"
         } 
     ]
     return prompt
