@@ -91,19 +91,20 @@ def format_example(example, fewshot_examples=None):
 
 def parse_response(text):
     #plan_re = r'```plan(.*)```'
-    plan_re = r'# Plan\n(.*)# Solution'
+    #plan_re = r'# Plan\n(.*)# Solution'
     #python_re = r'```python(.*)```'
     python_re = r'```(?:python)?(.*)```'
-    plan_matches = re.findall(plan_re, text, re.DOTALL)
+    #plan_matches = re.findall(plan_re, text, re.DOTALL)
     python_matches = re.findall(python_re, text, re.DOTALL)
 
     # generation failure => parsing failure
-    if len(plan_matches) == 0:
-        plan_matches = [""]
+    #if len(plan_matches) == 0:
+        #plan_matches = [""]
     if len(python_matches) == 0:
         python_matches = [""]
 
-    return python_matches[0], plan_matches[0]
+    #return python_matches[0], plan_matches[0]
+    return python_matches[0], None
 
 
 def main():
@@ -185,7 +186,6 @@ def main():
     for i in tqdm(range(0, len(test_examples), args.batch_size)):
         batch = test_examples.select(range(i, min(i+args.batch_size, len(test_examples))))
         examples = [format_example(example, fewshot_examples) for example in batch]
-        import pdb; pdb.set_trace()
         answers = sample_code_completion(examples, samples=args.num_samples)
         batch_codes, batch_plans = np.vectorize(parse_response)(answers)
         results = [
@@ -201,17 +201,17 @@ def main():
         # * False if incorrect
         # * -1 if timeout
         # * -2 if compilation error (whatever that means for python?)
-        plan_outputs.append(batch_plans)
+        #plan_outputs.append(batch_plans)
         code_outputs.append(batch_codes)
         is_correct.append(np.vectorize(lambda x: x == True)(results))
         errors.append(np.vectorize(get_error_type)(results))
 
-    plan_outputs = np.concatenate(plan_outputs, axis=0).tolist()
+    #plan_outputs = np.concatenate(plan_outputs, axis=0).tolist()
     code_outputs = np.concatenate(code_outputs, axis=0).tolist()
     is_correct  = np.concatenate(is_correct, axis=0).tolist()
     errors = np.concatenate(errors, axis=0).tolist()
 
-    test_examples = test_examples.add_column(name="plan", column=plan_outputs)
+    #test_examples = test_examples.add_column(name="plan", column=plan_outputs)
     test_examples = test_examples.add_column(name="code", column=code_outputs)
     test_examples = test_examples.add_column(name="is_correct", column=is_correct)
     dataset_name = args.dataset_name.split("/")[-1]
