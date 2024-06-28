@@ -65,7 +65,7 @@ You must copy the starter code then finish it.
 
 # Solution
 ```python
-# copy starter code here
+# copy and complete starter code here
 ```"""
 
 
@@ -74,7 +74,7 @@ You must copy the starter code then finish it.
 {example["question"].strip()}
 
 # Example Starter Code
-```
+```python
 {example["starter_code"].strip()}
 ```
 
@@ -103,7 +103,7 @@ You must copy the starter code then finish it.
             },
             {
                 "role": "user",
-                "content": f"This is the problem:\n\n# Problem\n{example['question']}\n# Solution",
+                "content": f"This is the problem:\n\n# Problem\n{example['question']}\n\n# Starter Code\n```python\n{example['starter_code'].strip()}\n```\n\n# Solution",
             },
         ]
 
