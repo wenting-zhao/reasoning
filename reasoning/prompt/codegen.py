@@ -19,7 +19,6 @@ The problem will require you to read input from stdin, and print the solution to
 # code solution here
 ```"""
 
-
     def format_fewshot_example(self, example):
         return f"""# Example Problem
 {example["question"].strip()}
@@ -41,7 +40,7 @@ The problem will require you to read input from stdin, and print the solution to
             {
                 "role": "system",
                 "content": self.ZEROSHOT_STRING
-                if self.use_fewshot
+                if not self.use_fewshot
                 else f"{self.ZEROSHOT_STRING}\n{NEWLINE.join(self.fewshot_examples)}",
             },
             {
