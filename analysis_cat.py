@@ -37,7 +37,7 @@ for i, one in enumerate(ds):
         level2acc[levels[i]].append(0)
 print("math accuracy:", correct / len(ds))
 for key in cat2acc:
-    print(key, sum(cat2acc[key])/len(cat2acc[key]))
+    print(key, sum(cat2acc[key])/len(cat2acc[key]), len(cat2acc[key]))
 print()
 for key in sorted(level2acc):
     print(key, sum(level2acc[key])/len(level2acc[key]))

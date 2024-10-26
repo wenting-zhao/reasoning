@@ -35,7 +35,8 @@ def main():
     ds = load_dataset("json", data_files=sys.argv[2], split="train")
 
     def tokenize_function(examples):
-        inp = [[{"role": "user", "content": "Solve the following math problem.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n" + problem}, {"role": "assistant", "content": format_cot(x)}] for problem, outputs in zip(examples["problem"], examples["output"]) for x in outputs]
+        key = 'output' if 'output' in examples else 'star'
+        inp = [[{"role": "user", "content": "Solve the following math problem.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n" + problem}, {"role": "assistant", "content": format_cot(x)}] for problem, outputs in zip(examples["problem"], examples[key]) for x in outputs]
         inp = [tokenizer.apply_chat_template(x, tokenize=False) for x in inp]
         output = tokenizer(inp)
         return output
@@ -55,7 +56,7 @@ def main():
 
     loss_fct = CrossEntropyLoss(reduction="none")
     dataloader = DataLoader(
-        ds, collate_fn=data_collator, batch_size=8
+        ds, collate_fn=data_collator, batch_size=4
     )
     mean_logprobs = []
     for batch in tqdm(dataloader):
@@ -79,7 +80,8 @@ def main():
 
         mean_logprobs += mean_logprob.tolist()
     ds = load_dataset("json", data_files=sys.argv[2], split="train")
-    n = len(ds["output"][0])
+    key = 'output' if 'output' in ds.column_names else 'star'
+    n = len(ds[key][0])
     mean_logprobs = [mean_logprobs[i:i + n] for i in range(0, len(mean_logprobs), n)]
     ds = ds.add_column(name="logprob", column=mean_logprobs)
     ds.to_json(sys.argv[2].replace(".json", "_logprob.json"))

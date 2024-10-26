@@ -250,6 +250,8 @@ def check(output, sol):
         answer = normalize_final_answer(answer)
     if output is not None:
         output = normalize_final_answer(output)
+    if answer is None and output is None:
+        return False
     return is_equiv(output, answer)
 
 def main():

@@ -6,7 +6,7 @@ import numpy as np
 
 def start_server(model, port):
     process = subprocess.Popen(["python", "-m", "sglang.launch_server", "--model-path", model, "--port", port])
-    os.system("sleep 2m")
+    os.system("sleep 30s")
     return process
 
 @sgl.function
@@ -53,6 +53,17 @@ def sample_completion(text, temperature=1, max_tokens=1024, samples=50, multi_tu
         states[i] = states[i].text()
     return states
 
+@sgl.function
+def text_q(s, question):
+    s += sgl.system(question)
+    s += sgl.user(sgl.gen("answer"))
+
+def sample_question(text, temperature=1, max_tokens=1024, samples=50, multi_turn=False):
+    d = [{"question": text} for _ in range(samples)]
+    states = text_q.run_batch(d, progress_bar=True, max_new_tokens=max_tokens, temperature=temperature)
+    for i in range(len(states)):
+        states[i] = states[i].text()
+    return states
 
 @sgl.function
 def codegen(s, system_message, user_message):
