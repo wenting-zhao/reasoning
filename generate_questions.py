@@ -54,9 +54,7 @@ def main():
 
     logger.info(args)
 
-    #prompt_text = "Solve the following competition-level math problem.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit."
-    #prompt_text = "Given an EHR provided by the user, your task is to summarize and highlight the important parts."
-    prompt_text = "用户将会提供身份证，你的任务是提取里面的生日信息。"
+    prompt_text = "Solve the following competition-level math problem.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit."
     generated_sequences = []
 
     for i in tqdm(range(args.total)):
