@@ -6,7 +6,7 @@ import numpy as np
 
 def start_server(model, port):
     process = subprocess.Popen(["python", "-m", "sglang.launch_server", "--model-path", model, "--port", port])
-    os.system("sleep 30s")
+    os.system("sleep 2m")
     return process
 
 @sgl.function

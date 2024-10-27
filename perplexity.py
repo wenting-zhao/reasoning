@@ -36,7 +36,8 @@ def main():
 
     def tokenize_function(examples):
         key = 'output' if 'output' in examples else 'star'
-        inp = [[{"role": "user", "content": "Solve the following math problem.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n" + problem}, {"role": "assistant", "content": format_cot(x)}] for problem, outputs in zip(examples["problem"], examples[key]) for x in outputs]
+        #inp = [[{"role": "user", "content": "Solve the following math problem.\nPlease highlight your solution with \\boxed{number} where number is the numerical answer without unit.\n\n" + problem}, {"role": "assistant", "content": format_cot(x)}] for problem, outputs in zip(examples["problem"], examples[key]) for x in outputs]
+        inp = [{"role": "user", "content": f"You will be given a math problem with an answer specified. Your job is to show the derivation to the answer.\n\nProblem: {example['problem']}\nAnswer: {example['answer']}"}, {"role": "assistant", "content": format_cot(x)}]
         inp = [tokenizer.apply_chat_template(x, tokenize=False) for x in inp]
         output = tokenizer(inp)
         return output

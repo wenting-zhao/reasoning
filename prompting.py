@@ -10,7 +10,7 @@ from utils import sample_completion, start_server
 from compute_accuracy import remove_boxed, last_boxed_only_string
 
 import sglang as sgl
-from sglang.backend.runtime_endpoint import RuntimeEndpoint
+from sglang import RuntimeEndpoint
 
 
 def format_example(example, include_answer=True):
